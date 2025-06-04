@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<me.thanel.swipeactionview.SwipeActionView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/swipe_view"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/white"
+    android:orientation="horizontal"
+    android:weightSum="10">
+
+    <ImageView
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_gravity="center_vertical"
+        android:layout_marginStart="@dimen/_3sdp"
+        android:src="@drawable/ic_edit" />
+
+    <ImageView
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_gravity="end|center_vertical"
+        android:layout_marginEnd="@dimen/_3sdp"
+        android:src="@drawable/ic_delete" />
+
+    <LinearLayout
+        android:id="@+id/rl_root"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/white"
+        android:orientation="vertical">
+
+        <RelativeLayout
+            android:id="@+id/rel_date"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="5dp"
+            android:background="@color/grey_date_bg"
+            android:paddingHorizontal="@dimen/_15sdp"
+            android:visibility="visible">
+
+            <TextView
+                android:id="@+id/txt_date"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_centerHorizontal="true"
+                android:fontFamily="@font/lato_bold"
+                android:paddingVertical="@dimen/_5sdp"
+                android:text="11-26-2021"
+                android:textColor="@color/black"
+                android:textSize="@dimen/_13sdp"
+                android:textStyle="bold" />
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/rel_main"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingVertical="@dimen/_10sdp">
+
+            <TextView
+                android:id="@+id/tv_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_toStartOf="@+id/tv_price"
+                android:fontFamily="@font/lato_bold"
+                android:paddingHorizontal="@dimen/_15sdp"
+                android:text="Item Name"
+                android:textColor="@color/black"
+                android:textSize="@dimen/_12ssp" />
+
+            <TextView
+                android:id="@+id/tv_price"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_marginEnd="@dimen/_15sdp"
+                android:fontFamily="@font/lato_bold"
+                android:text="100.00"
+                android:textColor="@color/black"
+                android:textSize="@dimen/_12ssp" />
+        </RelativeLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/grey_list" />
+    </LinearLayout>
+
+</me.thanel.swipeactionview.SwipeActionView>

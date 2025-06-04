@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/white">
+
+    <LinearLayout
+        android:id="@+id/ll_add_item"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="@dimen/_5sdp"
+        android:weightSum="10">
+
+        <EditText
+            android:id="@+id/itemNameInput"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="4"
+            android:fontFamily="@font/lato_regular"
+            android:gravity="center"
+            android:hint="@string/item_name"
+            android:imeOptions="actionNext"
+            android:inputType="numberDecimal"
+            android:textColor="@color/black"
+            android:textColorHint="@color/edit_text"
+            android:textSize="@dimen/_11ssp" />
+
+        <EditText
+            android:id="@+id/quantityInput"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2"
+            android:fontFamily="@font/lato_regular"
+            android:gravity="center"
+            android:hint="@string/quantity"
+            android:imeOptions="actionNext"
+            android:inputType="numberDecimal"
+            android:textColor="@color/black"
+            android:textColorHint="@color/edit_text"
+            android:textSize="@dimen/_11ssp" />
+
+        <EditText
+            android:id="@+id/rateInput"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2"
+            android:fontFamily="@font/lato_regular"
+            android:gravity="center"
+            android:hint="@string/rate"
+            android:imeOptions="actionDone"
+            android:inputType="numberDecimal"
+            android:textColor="@color/black"
+            android:textColorHint="@color/edit_text"
+            android:textSize="@dimen/_11ssp" />
+
+        <TextView
+            android:id="@+id/tv_total_item"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2"
+            android:fontFamily="@font/lato_bold"
+            android:gravity="center"
+            android:text="0.00"
+            android:textColor="@color/black"
+            android:textSize="@dimen/_11ssp" />
+    </LinearLayout>
+</LinearLayout>

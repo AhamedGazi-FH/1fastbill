@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">1 Fast Bill</string>
+    <string name="set_title">Set Title</string>
+    <string name="discount">Discount</string>
+    <string name="save_bill">Save Bill</string>
+    <string name="new_bill">New Bill</string>
+    <string name="item_name">Item Name</string>
+    <string name="quantity">Qty</string>
+    <string name="d_quantity">Default Quantity</string>
+    <string name="rate">Rate</string>
+    <string name="setting">Setting</string>
+    <string name="customer_name">Customer Name</string>
+    <string name="save">Save</string>
+    <string name="share">Share</string>
+    <string name="total">Total</string>
+    <string name="update">Update</string>
+    <string name="app_warning">Due to technical issues this app is no longer working.</string>
+    <string name="activation_code">Activation Code</string>
+    <string name="activate">Activate</string>
+    <string name="change">Change</string>
+</resources>

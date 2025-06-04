@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/swipe_view"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="@dimen/_10sdp"
+    android:background="@color/white"
+    android:gravity="center"
+    android:orientation="horizontal"
+    android:paddingVertical="@dimen/_5sdp">
+
+    <TextView
+        android:id="@+id/tv_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_toStartOf="@+id/isActive"
+        android:fontFamily="@font/lato_bold"
+        android:gravity="center"
+        android:paddingHorizontal="@dimen/_5sdp"
+        android:text="Shipping"
+        android:textColor="@color/black"
+        android:textSize="@dimen/_11ssp" />
+
+    <com.github.angads25.toggle.widget.LabeledSwitch
+        android:id="@+id/isActive"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:textSize="@dimen/_9ssp"
+        app:colorBorder="?attr/colorPrimary"
+        app:colorDisabled="?attr/colorPrimary"
+        app:colorOn="?attr/colorPrimary"
+        app:on="true"
+        app:textOff="OFF"
+        app:textOn="ON" />
+</RelativeLayout>
