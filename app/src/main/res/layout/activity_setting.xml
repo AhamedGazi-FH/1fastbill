@@ -37,357 +37,447 @@
 
     </RelativeLayout>
 
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="@dimen/_10sdp">
-
-        <!-- Title -->
-        <TextView
-            android:id="@+id/title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/_5sdp"
-            android:fontFamily="@font/lato_bold"
-            android:text="Select Color"
-            android:textColor="@color/black"
-            android:textSize="@dimen/_13ssp" />
+        android:layout_height="match_parent">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:orientation="vertical"
+            android:padding="@dimen/_10sdp">
 
-            <androidx.cardview.widget.CardView
-                android:id="@+id/cv_1"
-                android:layout_width="@dimen/_40sdp"
-                android:layout_height="@dimen/_40sdp"
-                android:layout_margin="@dimen/_3sdp"
-                android:foreground="?android:attr/selectableItemBackground"
-                app:cardBackgroundColor="@color/red"
-                app:cardCornerRadius="8dp"
-                app:cardUseCompatPadding="true">
+            <!-- Title -->
+            <TextView
+                android:id="@+id/title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_5sdp"
+                android:fontFamily="@font/lato_bold"
+                android:text="Select Color"
+                android:textColor="@color/black"
+                android:textSize="@dimen/_13ssp" />
 
-                <View
-                    android:id="@+id/view_1"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_margin="@dimen/_2sdp"
-                    android:clickable="false" />
-            </androidx.cardview.widget.CardView>
-
-            <androidx.cardview.widget.CardView
-                android:id="@+id/cv_2"
-                android:layout_width="@dimen/_40sdp"
-                android:layout_height="@dimen/_40sdp"
-                android:layout_margin="@dimen/_3sdp"
-                android:foreground="?android:attr/selectableItemBackground"
-                app:cardBackgroundColor="@color/red"
-                app:cardCornerRadius="8dp"
-                app:cardUseCompatPadding="true">
-
-                <View
-                    android:id="@+id/view_2"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_margin="@dimen/_2sdp"
-                    android:clickable="false" />
-            </androidx.cardview.widget.CardView>
-
-            <androidx.cardview.widget.CardView
-                android:id="@+id/cv_3"
-                android:layout_width="@dimen/_40sdp"
-                android:layout_height="@dimen/_40sdp"
-                android:layout_margin="@dimen/_3sdp"
-                android:foreground="?android:attr/selectableItemBackground"
-                app:cardBackgroundColor="@color/red"
-                app:cardCornerRadius="8dp"
-                app:cardUseCompatPadding="true">
-
-                <View
-                    android:id="@+id/view_3"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_margin="@dimen/_2sdp"
-                    android:clickable="false" />
-            </androidx.cardview.widget.CardView>
-
-            <androidx.cardview.widget.CardView
-                android:id="@+id/cv_4"
-                android:layout_width="@dimen/_40sdp"
-                android:layout_height="@dimen/_40sdp"
-                android:layout_margin="@dimen/_3sdp"
-                android:foreground="?android:attr/selectableItemBackground"
-                app:cardBackgroundColor="@color/red"
-                app:cardCornerRadius="8dp"
-                app:cardUseCompatPadding="true">
-
-                <View
-                    android:id="@+id/view_4"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_margin="@dimen/_2sdp"
-                    android:clickable="false" />
-            </androidx.cardview.widget.CardView>
-
-            <RelativeLayout
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:foreground="?android:attr/selectableItemBackground"
-                app:cardBackgroundColor="@color/red"
-                app:cardCornerRadius="8dp"
-                app:cardUseCompatPadding="true">
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
 
-                <TextView
-                    android:id="@+id/btn_change"
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/cv1"
+                    android:layout_width="@dimen/_40sdp"
+                    android:layout_height="@dimen/_40sdp"
+                    android:layout_margin="@dimen/_3sdp"
+                    android:foreground="?android:attr/selectableItemBackground"
+                    app:cardBackgroundColor="@color/red"
+                    app:cardCornerRadius="8dp"
+                    app:cardUseCompatPadding="true">
+
+                    <View
+                        android:id="@+id/view1"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_margin="@dimen/_2sdp"
+                        android:clickable="false" />
+                </androidx.cardview.widget.CardView>
+
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/cv2"
+                    android:layout_width="@dimen/_40sdp"
+                    android:layout_height="@dimen/_40sdp"
+                    android:layout_margin="@dimen/_3sdp"
+                    android:foreground="?android:attr/selectableItemBackground"
+                    app:cardBackgroundColor="@color/red"
+                    app:cardCornerRadius="8dp"
+                    app:cardUseCompatPadding="true">
+
+                    <View
+                        android:id="@+id/view2"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_margin="@dimen/_2sdp"
+                        android:clickable="false" />
+                </androidx.cardview.widget.CardView>
+
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/cv3"
+                    android:layout_width="@dimen/_40sdp"
+                    android:layout_height="@dimen/_40sdp"
+                    android:layout_margin="@dimen/_3sdp"
+                    android:foreground="?android:attr/selectableItemBackground"
+                    app:cardBackgroundColor="@color/red"
+                    app:cardCornerRadius="8dp"
+                    app:cardUseCompatPadding="true">
+
+                    <View
+                        android:id="@+id/view3"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_margin="@dimen/_2sdp"
+                        android:clickable="false" />
+                </androidx.cardview.widget.CardView>
+
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/cv4"
+                    android:layout_width="@dimen/_40sdp"
+                    android:layout_height="@dimen/_40sdp"
+                    android:layout_margin="@dimen/_3sdp"
+                    android:foreground="?android:attr/selectableItemBackground"
+                    app:cardBackgroundColor="@color/red"
+                    app:cardCornerRadius="8dp"
+                    app:cardUseCompatPadding="true">
+
+                    <View
+                        android:id="@+id/view4"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_margin="@dimen/_2sdp"
+                        android:clickable="false" />
+                </androidx.cardview.widget.CardView>
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:foreground="?android:attr/selectableItemBackground"
+                    app:cardBackgroundColor="@color/red"
+                    app:cardCornerRadius="8dp"
+                    app:cardUseCompatPadding="true">
+
+                    <TextView
+                        android:id="@+id/btn_change"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerInParent="true"
+                        android:background="@drawable/edit_text_box"
+                        android:backgroundTint="?attr/colorPrimary"
+                        android:fontFamily="@font/lato_bold"
+                        android:gravity="center"
+                        android:paddingHorizontal="@dimen/_20sdp"
+                        android:paddingVertical="@dimen/_8sdp"
+                        android:text="Change"
+                        android:textColor="@color/white"
+                        android:textSize="@dimen/_10ssp" />
+                </RelativeLayout>
+
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:fontFamily="@font/lato_bold"
+                android:text="Share Settings"
+                android:textColor="@color/black"
+                android:textSize="16sp" />
+
+            <RadioGroup
+                android:id="@+id/rg_share_app"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
+
+                <RadioButton
+                    android:id="@+id/rb_wa"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_centerInParent="true"
+                    android:text="WhatsApp" />
+
+                <RadioButton
+                    android:id="@+id/rb_wa_biz"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="WA Business" />
+
+                <RadioButton
+                    android:id="@+id/rb_other"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Other" />
+            </RadioGroup>
+
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/switch_caption"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Include Total &amp; Pcs Caption" />
+
+            <EditText
+                android:id="@+id/et_caption_template"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:hint="*Total {qty} Pcs ₹{total}*"
+                android:background="@drawable/edit_text_box"
+                android:padding="10dp"
+                android:textSize="14sp" />
+
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/switch_number"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Send to Default Number" />
+
+            <EditText
+                android:id="@+id/et_default_number"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/edit_text_box"
+                android:hint="918347913488 (Include Country Code)"
+                android:inputType="phone"
+                android:padding="10dp"
+                android:visibility="gone" />
+
+            <RelativeLayout
+                android:id="@+id/ll_add_item"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingVertical="@dimen/_10sdp"
+                android:weightSum="10">
+
+                <TextView
+                    android:id="@+id/tv_default"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:layout_toStartOf="@+id/quantityInput"
+                    android:layout_weight="4"
+                    android:fontFamily="@font/lato_bold"
+                    android:gravity="center"
+                    android:text="@string/d_quantity"
+                    android:textColor="@color/black"
+                    android:textSize="@dimen/_13ssp" />
+
+                <EditText
+                    android:id="@+id/quantityInput"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:layout_marginEnd="@dimen/_10sdp"
+                    android:layout_toStartOf="@+id/btnUpdate"
+                    android:fontFamily="@font/lato_bold"
+                    android:gravity="center"
+                    android:hint="@string/quantity"
+                    android:imeOptions="actionDone"
+                    android:inputType="numberDecimal"
+                    android:text="4"
+                    android:textColor="@color/black"
+                    android:textColorHint="@color/edit_text"
+                    android:textSize="@dimen/_12ssp" />
+
+                <TextView
+                    android:id="@+id/btnUpdate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginStart="@dimen/_5sdp"
+                    android:layout_marginEnd="@dimen/_10sdp"
                     android:background="@drawable/edit_text_box"
                     android:backgroundTint="?attr/colorPrimary"
                     android:fontFamily="@font/lato_bold"
                     android:gravity="center"
                     android:paddingHorizontal="@dimen/_20sdp"
                     android:paddingVertical="@dimen/_8sdp"
-                    android:text="Change"
+                    android:text="Update"
                     android:textColor="@color/white"
-                    android:textSize="@dimen/_10ssp" />
+                    android:textSize="@dimen/_14ssp" />
+
             </RelativeLayout>
 
-        </LinearLayout>
-    </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:background="#e6e6e6"
+                android:orientation="horizontal"
+                android:paddingVertical="@dimen/_5sdp"
+                android:weightSum="10">
 
-    <RelativeLayout
-        android:id="@+id/ll_add_item"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:paddingVertical="@dimen/_10sdp"
-        android:weightSum="10">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="4"
+                    android:fontFamily="@font/lato_bold"
+                    android:gravity="center"
+                    android:text="Name"
+                    android:textColor="@color/black"
+                    android:textSize="@dimen/_11ssp" />
 
-        <TextView
-            android:id="@+id/tv_default"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_centerVertical="true"
-            android:layout_toStartOf="@+id/quantityInput"
-            android:layout_weight="4"
-            android:fontFamily="@font/lato_bold"
-            android:gravity="center"
-            android:text="@string/d_quantity"
-            android:textColor="@color/black"
-            android:textSize="@dimen/_13ssp" />
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="3"
+                    android:fontFamily="@font/lato_bold"
+                    android:gravity="center"
+                    android:text="%"
+                    android:textColor="@color/black"
+                    android:textSize="@dimen/_11ssp" />
 
-        <EditText
-            android:id="@+id/quantityInput"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerVertical="true"
-            android:layout_marginEnd="@dimen/_10sdp"
-            android:layout_toStartOf="@+id/btnUpdate"
-            android:fontFamily="@font/lato_bold"
-            android:gravity="center"
-            android:hint="@string/quantity"
-            android:imeOptions="actionDone"
-            android:inputType="numberDecimal"
-            android:text="4"
-            android:textColor="@color/black"
-            android:textColorHint="@color/edit_text"
-            android:textSize="@dimen/_12ssp" />
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="3"
+                    android:fontFamily="@font/lato_bold"
+                    android:gravity="center"
+                    android:text="Amm."
+                    android:textColor="@color/black"
+                    android:textSize="@dimen/_11ssp" />
+            </LinearLayout>
 
-        <TextView
-            android:id="@+id/btnUpdate"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
-            android:layout_marginStart="@dimen/_5sdp"
-            android:layout_marginEnd="@dimen/_10sdp"
-            android:background="@drawable/edit_text_box"
-            android:backgroundTint="?attr/colorPrimary"
-            android:fontFamily="@font/lato_bold"
-            android:gravity="center"
-            android:paddingHorizontal="@dimen/_20sdp"
-            android:paddingVertical="@dimen/_8sdp"
-            android:text="Update"
-            android:textColor="@color/white"
-            android:textSize="@dimen/_14ssp" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_5sdp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingVertical="@dimen/_5sdp"
+                android:weightSum="10">
 
-    </RelativeLayout>
+                <EditText
+                    android:id="@+id/etTitle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="4"
+                    android:fontFamily="@font/lato_bold"
+                    android:gravity="center"
+                    android:hint="Name"
+                    android:imeOptions="actionNext"
+                    android:inputType="textCapWords"
+                    android:textColor="@color/black"
+                    android:textColorHint="@color/edt_border"
+                    android:textSize="@dimen/_11ssp" />
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/_10sdp"
-        android:background="#e6e6e6"
-        android:orientation="horizontal"
-        android:paddingVertical="@dimen/_5sdp"
-        android:weightSum="10">
+                <EditText
+                    android:id="@+id/et_percentage"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="3"
+                    android:fontFamily="@font/lato_bold"
+                    android:gravity="center"
+                    android:hint="0 %"
+                    android:imeOptions="actionDone"
+                    android:inputType="numberDecimal"
+                    android:textColor="@color/black"
+                    android:textColorHint="@color/edt_border"
+                    android:textSize="@dimen/_11ssp" />
 
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="3"
-            android:fontFamily="@font/lato_bold"
-            android:gravity="center"
-            android:text="Name"
-            android:textColor="@color/black"
-            android:textSize="@dimen/_11ssp" />
+                <EditText
+                    android:id="@+id/et_price"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="3"
+                    android:fontFamily="@font/lato_bold"
+                    android:gravity="center"
+                    android:hint="0.00 Amm."
+                    android:imeOptions="actionDone"
+                    android:inputType="numberDecimal"
+                    android:textColor="@color/black"
+                    android:textColorHint="@color/edt_border"
+                    android:textSize="@dimen/_11ssp" />
+            </LinearLayout>
 
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1.2"
-            android:fontFamily="@font/lato_bold"
-            android:gravity="center"
-            android:text="%"
-            android:textColor="@color/black"
-            android:textSize="@dimen/_11ssp" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:orientation="horizontal"
+                android:weightSum="2">
 
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1.8"
-            android:fontFamily="@font/lato_bold"
-            android:gravity="center"
-            android:text="Amm."
-            android:textColor="@color/black"
-            android:textSize="@dimen/_11ssp" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1.2"
+                    android:orientation="vertical">
 
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="2"
-            android:fontFamily="@font/lato_bold"
-            android:gravity="center"
-            android:text="isADD"
-            android:textColor="@color/black"
-            android:textSize="@dimen/_11ssp" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/lato_bold"
+                        android:text="Type"
+                        android:textColor="#757575"
+                        android:textSize="12sp" />
 
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="2"
-            android:fontFamily="@font/lato_bold"
-            android:gravity="center"
-            android:text="isActive"
-            android:textColor="@color/black"
-            android:textSize="@dimen/_11ssp" />
-    </LinearLayout>
+                    <RadioGroup
+                        android:id="@+id/rg_isAdd"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:orientation="horizontal">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/_5sdp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingVertical="@dimen/_5sdp"
-        android:weightSum="10">
+                        <RadioButton
+                            android:id="@+id/rb_minus"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Discount (-)"
+                            android:textColor="@color/black"
+                            android:textSize="14sp"
+                            app:buttonTint="#D32F2F" />
 
-        <EditText
-            android:id="@+id/etTitle"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="3"
-            android:fontFamily="@font/lato_bold"
-            android:gravity="center"
-            android:hint="Name"
-            android:imeOptions="actionNext"
-            android:inputType="textCapWords"
-            android:textColor="@color/black"
-            android:textColorHint="@color/edt_border"
-            android:textSize="@dimen/_11ssp" />
+                        <RadioButton
+                            android:id="@+id/rb_plus"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:text="Charge (+)"
+                            android:textColor="@color/black"
+                            android:textSize="14sp"
+                            app:buttonTint="#2E7D32" />
+                    </RadioGroup>
+                </LinearLayout>
 
-        <EditText
-            android:id="@+id/et_percentage"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1.2"
-            android:fontFamily="@font/lato_bold"
-            android:gravity="center"
-            android:hint="0"
-            android:imeOptions="actionDone"
-            android:inputType="numberDecimal"
-            android:textColor="@color/black"
-            android:textColorHint="@color/edt_border"
-            android:textSize="@dimen/_11ssp" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="0.8"
+                    android:gravity="end"
+                    android:orientation="vertical">
 
-        <EditText
-            android:id="@+id/et_price"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1.8"
-            android:fontFamily="@font/lato_bold"
-            android:gravity="center"
-            android:hint="0.00"
-            android:imeOptions="actionDone"
-            android:inputType="numberDecimal"
-            android:textColor="@color/black"
-            android:textColorHint="@color/edt_border"
-            android:textSize="@dimen/_11ssp" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/lato_bold"
+                        android:text="Status"
+                        android:textColor="#757575"
+                        android:textSize="12sp" />
 
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="2"
-            android:gravity="center">
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/switch_isActive"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Active "
+                        android:textColor="@color/black"
+                        android:textSize="14sp" />
+                </LinearLayout>
+            </LinearLayout>
 
-            <com.github.angads25.toggle.widget.LabeledSwitch
-                android:id="@+id/isAdd"
+            <TextView
+                android:id="@+id/btnAdd"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="@dimen/_3sdp"
-                android:textSize="@dimen/_11ssp"
-                app:colorBorder="?attr/colorPrimary"
-                app:colorDisabled="?attr/colorPrimary"
-                app:colorOn="?attr/colorPrimary"
-                app:on="true"
-                app:textOff="NO"
-                app:textOn="YES" />
-        </LinearLayout>
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="@dimen/_5sdp"
+                android:background="@drawable/edit_text_box"
+                android:backgroundTint="?attr/colorPrimary"
+                android:fontFamily="@font/lato_bold"
+                android:gravity="center"
+                android:paddingHorizontal="@dimen/_20sdp"
+                android:paddingVertical="@dimen/_5sdp"
+                android:text="Add"
+                android:textColor="@color/white"
+                android:textSize="@dimen/_14ssp" />
 
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="2"
-            android:gravity="center">
-
-            <com.github.angads25.toggle.widget.LabeledSwitch
-                android:id="@+id/isActive"
-                android:layout_width="wrap_content"
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_discount"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="@dimen/_3sdp"
-                android:textSize="@dimen/_11ssp"
-                app:colorBorder="?attr/colorPrimary"
-                app:colorDisabled="?attr/colorPrimary"
-                app:colorOn="?attr/colorPrimary"
-                app:on="true"
-                app:textOff="NO"
-                app:textOn="YES" />
+                android:layout_marginTop="@dimen/_10sdp" />
+
         </LinearLayout>
-    </LinearLayout>
-
-    <TextView
-        android:id="@+id/btnAdd"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginTop="@dimen/_5sdp"
-        android:background="@drawable/edit_text_box"
-        android:backgroundTint="?attr/colorPrimary"
-        android:fontFamily="@font/lato_bold"
-        android:gravity="center"
-        android:paddingHorizontal="@dimen/_20sdp"
-        android:paddingVertical="@dimen/_5sdp"
-        android:text="Add"
-        android:textColor="@color/white"
-        android:textSize="@dimen/_14ssp" />
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rv_discount"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/_10sdp" />
-
+    </ScrollView>
 </LinearLayout>

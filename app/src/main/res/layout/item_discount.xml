@@ -23,6 +23,7 @@
         android:src="@drawable/ic_delete" />
 
     <LinearLayout
+        android:id="@+id/ll_discount_row"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/white"

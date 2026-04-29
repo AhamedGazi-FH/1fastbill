@@ -1,4 +1,5 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -81,7 +82,11 @@
             android:singleLine="true"
             android:textColor="@color/black"
             android:textColorHint="@color/edit_text"
-            android:textSize="@dimen/_12sdp" />
+            android:textSize="@dimen/_12sdp"
+            android:inputType="textPersonName|textCapWords"
+            android:imeOptions="actionNext"
+            android:nextFocusForward="@+id/itemNameInput"
+            android:nextFocusDown="@+id/itemNameInput" />
 
         <TextView
             android:id="@+id/tv_date"
@@ -393,6 +398,7 @@
                         android:textSize="@dimen/_11ssp" />
 
                     <TextView
+                        android:id="@+id/textViewTotalLabel"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="3"
@@ -415,6 +421,18 @@
                         android:textColor="@color/white"
                         android:textSize="@dimen/_13ssp" />
                 </LinearLayout>
+
+                <TextView
+                    android:id="@+id/btn_quick_setup"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="+ Setup Discounts &amp; Colors"
+                    android:gravity="center"
+                    android:paddingVertical="@dimen/_10sdp"
+                    android:textColor="?attr/colorPrimary"
+                    android:textSize="@dimen/_12ssp"
+                    android:fontFamily="@font/lato_bold"
+                    android:foreground="?android:attr/selectableItemBackground" />
 
             </LinearLayout>
 
