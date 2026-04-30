@@ -20,12 +20,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
+import android.widget.ArrayAdapter
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.FileProvider
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -43,6 +43,7 @@ import com.fastbill.ahamed.database.Invoice
 import com.fastbill.ahamed.database.InvoiceDatabase
 import com.fastbill.ahamed.database.InvoiceDiscount
 import com.fastbill.ahamed.database.Rate
+import com.fastbill.ahamed.database.SyncManager
 import com.fastbill.ahamed.databinding.ActivityMainBinding
 import com.fastbill.ahamed.databinding.BottomSheetSettingsBinding
 import com.fastbill.ahamed.databinding.EditDiscountDialogBinding
@@ -65,7 +66,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var adapter: ItemAdapter
     private lateinit var discountAdapter: ItemDiscountAdapter
     lateinit var binding: ActivityMainBinding
-    private lateinit var rateDatabase: InvoiceDatabase
     private lateinit var sharedPreferences: SharedPreferences
     private lateinit var discountList: MutableList<Discount>
     private var selectedColorCode = "#6750A4"
@@ -84,8 +84,19 @@ class MainActivity : AppCompatActivity() {
     private val invoiceDiscountDao by lazy {
         database.invoiceDiscountDao()
     }
+    private val customerDao by lazy {
+        database.customerDao()
+    }
+    private val rateDao by lazy {
+        database.rateDao()
+    }
+    private val syncManager by lazy {
+        SyncManager(this)
+    }
 
+    private lateinit var customerAdapter: ArrayAdapter<String>
     private var invoiceId = -1
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -98,6 +109,9 @@ class MainActivity : AppCompatActivity() {
         }
 
         sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
+        
+        checkAndPerformAutoSync()
+
         val isActivated = sharedPreferences.getBoolean("isActivated", false)
         if (isActivated) {
             binding.activate.relActivate.visibility = View.GONE
@@ -146,8 +160,6 @@ class MainActivity : AppCompatActivity() {
         binding.btnQuickSetup.setOnClickListener {
             showQuickSetupBottomSheet()
         }
-
-        rateDatabase = InvoiceDatabase.getDatabase(this)
 
         // Initialize item list and adapter
         itemList = mutableListOf()
@@ -223,13 +235,13 @@ class MainActivity : AppCompatActivity() {
                 binding.indexTextView.text = "${itemList.size + 1}."
 
                 lifecycleScope.launch {
-                    val existingRate = rateDatabase.rateDao().getRateByItemName(name)
+                    val existingRate = rateDao.getRateByItemName(name)
                     if (existingRate != null) {
                         existingRate.rate = rate
-                        rateDatabase.rateDao().update(existingRate)
+                        rateDao.update(existingRate)
                     } else {
                         val newRate = Rate(item_name = name, rate = rate)
-                        rateDatabase.rateDao().insert(newRate)
+                        rateDao.insert(newRate)
                     }
                 }
             } else {
@@ -483,6 +495,47 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+
+        setupCustomerAutocomplete()
+    }
+
+    private fun checkAndPerformAutoSync() {
+        val lastSync = sharedPreferences.getLong("last_sync_timestamp", 0L)
+        val currentTime = System.currentTimeMillis()
+        val fortyEightHoursInMillis = 48 * 60 * 60 * 1000L
+
+        if (currentTime - lastSync > fortyEightHoursInMillis) {
+            lifecycleScope.launch(Dispatchers.IO) {
+                val fetchResult = syncManager.fetchNewCustomers()
+                val pushResult = syncManager.pushUnsyncedCustomers()
+                
+                if (fetchResult.isSuccess && pushResult.isSuccess) {
+                    sharedPreferences.edit().putLong("last_sync_timestamp", System.currentTimeMillis()).apply()
+                }
+            }
+        }
+    }
+
+    private fun setupCustomerAutocomplete() {
+        customerAdapter = ArrayAdapter<String>(this, android.R.layout.simple_dropdown_item_1line, mutableListOf())
+        binding.edtUsername.setAdapter(customerAdapter)
+
+        binding.edtUsername.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val query = s?.toString()?.trim() ?: ""
+                if (query.length >= 1) {
+                    lifecycleScope.launch {
+                        val results = customerDao.searchCustomers("%$query%")
+                        val names = results.map { it.customerName }
+                        customerAdapter.clear()
+                        customerAdapter.addAll(names)
+                        customerAdapter.notifyDataSetChanged()
+                    }
+                }
+            }
+            override fun afterTextChanged(s: Editable?) {}
+        })
     }
 
     private fun shareImage(file: File) {
@@ -677,21 +730,21 @@ class MainActivity : AppCompatActivity() {
         // Add a text watcher to quantityInput
         binding.quantityInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: Editable?) {
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 validateInputs()
                 calculateTotal()
             }
+            override fun afterTextChanged(s: Editable?) {}
         })
 
         // Add a text watcher to rateInput
         binding.rateInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: Editable?) {
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 validateInputs()
                 calculateTotal()
             }
+            override fun afterTextChanged(s: Editable?) {}
         })
         binding.rateInput.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_DONE) {
@@ -718,7 +771,7 @@ class MainActivity : AppCompatActivity() {
             val itemName = binding.itemNameInput.text.toString().trim()
             if (itemName.isNotEmpty()) {
                 lifecycleScope.launch {
-                    val rate = rateDatabase.rateDao().getRateByItemName(itemName)
+                    val rate = rateDao.getRateByItemName(itemName)
                     if (rate != null) {
                         binding.rateInput.setText(rate.rate.toString())
                     }

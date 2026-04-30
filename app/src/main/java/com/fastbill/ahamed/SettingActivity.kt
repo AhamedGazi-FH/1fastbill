@@ -1,6 +1,7 @@
 package com.fastbill.ahamed
 
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Color
 import android.graphics.Typeface
@@ -19,6 +20,7 @@ import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.cardview.widget.CardView
 import androidx.core.content.res.ResourcesCompat
@@ -27,15 +29,19 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.fastbill.ahamed.R
 import com.fastbill.ahamed.adapter.ItemDiscountSettingAdapter
+import com.fastbill.ahamed.database.CSVImporter
 import com.fastbill.ahamed.database.Discount
 import com.fastbill.ahamed.database.InvoiceDatabase
+import com.fastbill.ahamed.database.SyncManager
 import com.fastbill.ahamed.databinding.ActivitySettingBinding
 import com.fastbill.ahamed.databinding.EditDiscountDialogBinding
 import com.fastbill.ahamed.model.DiscountAction
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class SettingActivity : AppCompatActivity() {
 
@@ -51,6 +57,28 @@ class SettingActivity : AppCompatActivity() {
     }
     private val discountDao by lazy {
         database.discountDao()
+    }
+    private val customerDao by lazy {
+        database.customerDao()
+    }
+    private val syncLogDao by lazy {
+        database.syncLogDao()
+    }
+    private val syncManager by lazy {
+        SyncManager(this)
+    }
+
+    private val csvPickerLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let {
+            lifecycleScope.launch {
+                val result = CSVImporter.importCustomersFromCSV(this@SettingActivity, it, customerDao)
+                result.onSuccess { count ->
+                    Toast.makeText(this@SettingActivity, "Imported $count customers successfully", Toast.LENGTH_SHORT).show()
+                }.onFailure { error ->
+                    Toast.makeText(this@SettingActivity, "Import failed: ${error.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -232,6 +260,45 @@ class SettingActivity : AppCompatActivity() {
         loadColorView()
         binding.btnChange.setOnClickListener {
             showChangeColorDialog(colorList.indexOf(selectedColorCode))
+        }
+
+        binding.btnImportCsv.setOnClickListener {
+            csvPickerLauncher.launch("text/comma-separated-values")
+        }
+
+        binding.btnForceSync.setOnClickListener {
+            lifecycleScope.launch {
+                val fetchResult = syncManager.fetchNewCustomers()
+                val pushResult = syncManager.pushUnsyncedCustomers()
+
+                if (fetchResult.isSuccess && pushResult.isSuccess) {
+                    sharedPreferences.edit().putLong("last_sync_timestamp", System.currentTimeMillis()).apply()
+                    Toast.makeText(this@SettingActivity, "Sync Complete", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this@SettingActivity, "Sync Failed", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
+        binding.btnForceSync.setOnLongClickListener {
+            showSyncLogs()
+            true
+        }
+    }
+
+    private fun showSyncLogs() {
+        lifecycleScope.launch {
+            val logs = syncLogDao.getLastLogs()
+            val logStrings = logs.map { log ->
+                val date = SimpleDateFormat("dd/MM HH:mm", Locale.getDefault()).format(Date(log.timestamp))
+                "[$date] ${log.status}: ${log.details}"
+            }
+            
+            AlertDialog.Builder(this@SettingActivity)
+                .setTitle("Sync History (Last 20)")
+                .setItems(logStrings.toTypedArray(), null)
+                .setPositiveButton("OK", null)
+                .show()
         }
     }
 

@@ -231,6 +231,34 @@
                 android:padding="10dp"
                 android:visibility="gone" />
 
+            <TextView
+                android:id="@+id/btn_import_csv"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/edit_text_box"
+                android:backgroundTint="?attr/colorPrimary"
+                android:fontFamily="@font/lato_bold"
+                android:gravity="center"
+                android:padding="12dp"
+                android:text="Import Customers (CSV)"
+                android:textColor="@color/white"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/btn_force_sync"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/edit_text_box"
+                android:backgroundTint="?attr/colorPrimary"
+                android:fontFamily="@font/lato_bold"
+                android:gravity="center"
+                android:padding="12dp"
+                android:text="Force Cloud Sync"
+                android:textColor="@color/white"
+                android:textSize="14sp" />
+
             <RelativeLayout
                 android:id="@+id/ll_add_item"
                 android:layout_width="match_parent"

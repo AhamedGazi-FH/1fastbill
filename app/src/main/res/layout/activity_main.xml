@@ -67,7 +67,7 @@
         android:padding="@dimen/_5sdp"
         android:weightSum="4">
 
-        <androidx.appcompat.widget.AppCompatEditText
+        <androidx.appcompat.widget.AppCompatAutoCompleteTextView
             android:id="@+id/edt_username"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -86,7 +86,8 @@
             android:inputType="textPersonName|textCapWords"
             android:imeOptions="actionNext"
             android:nextFocusForward="@+id/itemNameInput"
-            android:nextFocusDown="@+id/itemNameInput" />
+            android:nextFocusDown="@+id/itemNameInput"
+            android:completionThreshold="1" />
 
         <TextView
             android:id="@+id/tv_date"
