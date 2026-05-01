@@ -43,6 +43,12 @@
             android:launchMode="standard"
             android:theme="@style/AppThemeCompact"
             android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:screenOrientation="portrait"
+            android:name=".SharedInboxActivity"
+            android:exported="false"
+            android:launchMode="standard"
+            android:theme="@style/AppThemeCompact" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

@@ -32,6 +32,12 @@ interface InvoiceDao {
     @Query("DELETE FROM invoice_table WHERE invoiceId = :invoiceId")
     suspend fun deleteInvoiceById(invoiceId: Int)
 
+    @Query("DELETE FROM invoice_table")
+    suspend fun deleteAllInvoices()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertMultipleInvoices(invoices: List<Invoice>)
+
     @Update
     suspend fun updateInvoice(invoice: Invoice)
 

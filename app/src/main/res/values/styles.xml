@@ -27,7 +27,7 @@
     <style name="MyStyle">
         <item name="colorAccent">@color/colorPrimary</item>
     </style>
-    <style name="Theme.Blue" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <style name="Theme.Blue" parent="Theme.MaterialComponents.Light.NoActionBar">
         <!-- Primary brand color. -->
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryVariant">@color/white</item>
@@ -42,7 +42,7 @@
     </style>
 
 
-    <style name="AppThemeCompact" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <style name="AppThemeCompact" parent="Theme.MaterialComponents.Light.NoActionBar">
         <!-- Customize your theme here. -->
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/white</item>

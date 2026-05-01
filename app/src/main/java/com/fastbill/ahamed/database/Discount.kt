@@ -6,11 +6,11 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "discount_table")
 data class Discount(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    var title: String,
-    var percentage: Int,
-    var price: Double,
-    var isPlus: Boolean,
-    var isActive: Boolean,
-    var invoiceId: Int? = null, // Nullable field to associate with an invoice
+    var title: String = "",
+    var percentage: Int = 0,
+    var price: Double = 0.0,
+    var isPlus: Boolean = false,
+    var isActive: Boolean = false,
+    var invoiceId: Int? = null,
     var orderIndex: Int = 0
 )

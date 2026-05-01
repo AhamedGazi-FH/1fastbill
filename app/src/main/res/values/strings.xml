@@ -18,4 +18,9 @@
     <string name="activation_code">Activation Code</string>
     <string name="activate">Activate</string>
     <string name="change">Change</string>
+    <string name="index_format">%1$d.</string>
+    <string name="qty_format">%1$d Pcs</string>
+    <string name="currency_format">₹ %1$s</string>
+    <string name="discount_chip_format">%1$s (%2$s)</string>
+    <string name="edit">Edit</string>
 </resources>

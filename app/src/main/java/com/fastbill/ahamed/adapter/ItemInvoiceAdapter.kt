@@ -1,5 +1,6 @@
 package com.fastbill.ahamed.adapter
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,8 +13,6 @@ import me.thanel.swipeactionview.SwipeActionView
 import me.thanel.swipeactionview.SwipeDirection
 import me.thanel.swipeactionview.SwipeGestureListener
 import java.text.NumberFormat
-import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 
 class ItemInvoiceAdapter(
@@ -65,26 +64,35 @@ class ItemInvoiceAdapter(
 
     inner class BillViewHolder(private val binding: InvoiceItemBinding) :
         RecyclerView.ViewHolder(binding.root) {
+        
+        init {
+            binding.relMain.setOnClickListener {
+                val position = adapterPosition
+                if (position != RecyclerView.NO_POSITION) {
+                    onPerformAction(position, DiscountAction.ACTIVATE)
+                }
+            }
+        }
+
         fun bind(item: HistoryListItem.BillData) {
             val bill = item.invoice
             binding.tvName.text = bill.name
             binding.tvPrice.text = "₹${bill.total}"
             
-            // Hide the old inline date header as we now use the dedicated HeaderViewHolder
             binding.relDate.visibility = View.GONE
 
             binding.swipeView.setDirectionEnabled(SwipeDirection.Right, false)
             binding.swipeView.swipeGestureListener = object : SwipeGestureListener {
                 override fun onSwipedLeft(swipeActionView: SwipeActionView): Boolean {
-                    onPerformAction(adapterPosition, DiscountAction.DELETE)
+                    val pos = adapterPosition
+                    if (pos != RecyclerView.NO_POSITION) {
+                        onPerformAction(pos, DiscountAction.DELETE)
+                    }
                     return true
                 }
                 override fun onSwipedRight(swipeActionView: SwipeActionView): Boolean {
                     return true
                 }
-            }
-            binding.relMain.setOnClickListener {
-                onPerformAction(adapterPosition, DiscountAction.ACTIVATE)
             }
         }
     }

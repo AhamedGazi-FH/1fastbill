@@ -17,9 +17,9 @@ import androidx.room.PrimaryKey
 )
 data class Item(
     @PrimaryKey(autoGenerate = true) val itemId: Int = 0,
-    val invoiceId: Int, // Foreign key linking to the Invoice table
-    val name: String,
-    val quantity: Int,
-    val rate: Double,
-    val total: Double
+    val invoiceId: Int = 0, // Foreign key linking to the Invoice table
+    val name: String = "",
+    val quantity: Int = 0,
+    val rate: Double = 0.0,
+    val total: Double = 0.0
 )

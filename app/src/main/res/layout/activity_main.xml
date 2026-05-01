@@ -1,11 +1,11 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/white"
-    android:orientation="vertical"
-    >
+    android:orientation="vertical">
 
     <RelativeLayout
         android:id="@+id/toolbar"
@@ -24,6 +24,16 @@
             android:textColor="@color/white"
             android:textSize="@dimen/_16ssp"
             android:textStyle="bold" />
+
+        <ImageView
+            android:id="@+id/img_share_firebase"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_centerVertical="true"
+            android:layout_toStartOf="@+id/img_reset"
+            android:paddingHorizontal="@dimen/_12sdp"
+            android:src="@drawable/ic_share"
+            app:tint="#FF4444" />
 
         <ImageView
             android:id="@+id/img_reset"
@@ -64,35 +74,37 @@
         android:layout_below="@+id/toolbar"
         android:layout_marginVertical="@dimen/_5sdp"
         android:orientation="horizontal"
-        android:padding="@dimen/_5sdp"
+        android:paddingHorizontal="@dimen/_5sdp"
+        android:gravity="center_vertical"
         android:weightSum="4">
 
-        <androidx.appcompat.widget.AppCompatAutoCompleteTextView
-            android:id="@+id/edt_username"
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/til_username"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="3"
-            android:background="@drawable/edit_text_box"
-            android:drawableStart="@drawable/profile_icon"
-            android:fontFamily="@font/lato_bold"
-            android:gravity="center"
             android:hint="@string/customer_name"
-            android:paddingHorizontal="10dp"
-            android:paddingVertical="@dimen/_8sdp"
-            android:singleLine="true"
-            android:textColor="@color/black"
-            android:textColorHint="@color/edit_text"
-            android:textSize="@dimen/_12sdp"
-            android:inputType="textPersonName|textCapWords"
-            android:imeOptions="actionNext"
-            android:nextFocusForward="@+id/itemNameInput"
-            android:nextFocusDown="@+id/itemNameInput"
-            android:completionThreshold="1" />
+            app:startIconDrawable="@drawable/profile_icon">
+
+            <androidx.appcompat.widget.AppCompatAutoCompleteTextView
+                android:id="@+id/edt_username"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/lato_bold"
+                android:inputType="textPersonName|textCapWords"
+                android:imeOptions="actionNext"
+                android:nextFocusForward="@+id/itemNameInput"
+                android:nextFocusDown="@+id/itemNameInput"
+                android:completionThreshold="1"
+                android:textColor="@color/black"
+                android:textSize="@dimen/_12sdp" />
+        </com.google.android.material.textfield.TextInputLayout>
 
         <TextView
             android:id="@+id/tv_date"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
             android:fontFamily="@font/lato_bold"
             android:gravity="center"
@@ -107,59 +119,66 @@
         android:layout_height="wrap_content"
         android:layout_below="@+id/ll_customer"
         android:orientation="horizontal"
-        android:padding="@dimen/_5sdp"
+        android:paddingHorizontal="@dimen/_5sdp"
+        android:gravity="center_vertical"
         android:weightSum="10">
 
         <TextView
             android:id="@+id/indexTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_weight="0.8"
             android:fontFamily="@font/lato_regular"
             android:text="1."
             android:textColor="@color/black"
             android:textSize="@dimen/_11ssp" />
 
-        <EditText
+        <androidx.appcompat.widget.AppCompatEditText
             android:id="@+id/itemNameInput"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="3.7"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_underline"
             android:fontFamily="@font/lato_regular"
             android:gravity="center"
             android:hint="@string/item_name"
             android:imeOptions="actionNext"
-            android:inputType="numberDecimal"
+            android:inputType="number"
+            android:paddingVertical="8dp"
             android:textColor="@color/black"
-            android:textColorHint="@color/edit_text"
             android:textSize="@dimen/_11ssp" />
 
-        <EditText
+        <androidx.appcompat.widget.AppCompatEditText
             android:id="@+id/quantityInput"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1.5"
+            android:layout_weight="1.6"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_underline"
             android:fontFamily="@font/lato_regular"
             android:gravity="center"
             android:hint="@string/quantity"
             android:imeOptions="actionNext"
-            android:inputType="numberDecimal"
+            android:inputType="number"
+            android:paddingVertical="8dp"
             android:textColor="@color/black"
-            android:textColorHint="@color/edit_text"
             android:textSize="@dimen/_11ssp" />
 
-        <EditText
+        <androidx.appcompat.widget.AppCompatEditText
             android:id="@+id/rateInput"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1.8"
+            android:layout_weight="1.9"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_underline"
             android:fontFamily="@font/lato_regular"
             android:gravity="center"
             android:hint="@string/rate"
             android:imeOptions="actionDone"
             android:inputType="numberDecimal"
+            android:paddingVertical="8dp"
             android:textColor="@color/black"
-            android:textColorHint="@color/edit_text"
             android:textSize="@dimen/_11ssp" />
 
         <TextView
@@ -168,10 +187,11 @@
             android:layout_height="wrap_content"
             android:layout_weight="2"
             android:fontFamily="@font/lato_bold"
-            android:gravity="center"
+            android:gravity="end|center_vertical"
             android:text="0.00"
             android:textColor="@color/black"
-            android:textSize="@dimen/_11ssp" />
+            android:textSize="@dimen/_11ssp"
+            android:textStyle="bold" />
     </LinearLayout>
 
     <TextView
@@ -409,7 +429,6 @@
                         android:textColor="@color/white"
                         android:textSize="@dimen/_12ssp" />
 
-
                     <TextView
                         android:id="@+id/tv_final_total"
                         android:layout_width="0dp"
@@ -449,38 +468,49 @@
         android:orientation="horizontal"
         android:weightSum="2">
 
-        <TextView
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSave"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/_10sdp"
             android:layout_marginEnd="@dimen/_5sdp"
             android:layout_weight="1"
-            android:background="@drawable/edit_text_box"
             android:fontFamily="@font/lato_bold"
-            android:foreground="?android:attr/selectableItemBackground"
-            android:gravity="center"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
             android:paddingVertical="@dimen/_8sdp"
             android:text="@string/save"
             android:textColor="?attr/colorPrimary"
-            android:textSize="@dimen/_14ssp" />
+            android:textSize="@dimen/_14ssp"
+            app:backgroundTint="@color/white"
+            app:cornerRadius="@dimen/_6sdp"
+            app:strokeColor="@color/edt_border"
+            app:strokeWidth="1dp"
+            android:textAllCaps="false" />
 
-        <TextView
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnShare"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/_5sdp"
             android:layout_marginEnd="@dimen/_10sdp"
             android:layout_weight="1"
-            android:background="@drawable/edit_text_box"
-            android:backgroundTint="?attr/colorPrimary"
             android:fontFamily="@font/lato_bold"
-            android:foreground="?android:attr/selectableItemBackground"
-            android:gravity="center"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
             android:paddingVertical="@dimen/_8sdp"
             android:text="@string/share"
             android:textColor="@color/white"
-            android:textSize="@dimen/_14ssp" />
+            android:textSize="@dimen/_14ssp"
+            app:backgroundTint="?attr/colorPrimary"
+            app:cornerRadius="@dimen/_6sdp"
+            app:icon="@drawable/ic_setting"
+            app:iconGravity="textEnd"
+            app:iconPadding="8dp"
+            app:iconSize="16dp"
+            app:iconTint="@color/white"
+            android:textAllCaps="false" />
     </LinearLayout>
 
     <include

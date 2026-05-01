@@ -20,6 +20,7 @@ toggle = "1.1.0"
 lottie = "6.4.0"
 googleGmsGoogleServices = "4.4.4"
 firebaseFirestore = "26.2.0"
+workRuntime = "2.10.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -43,6 +44,7 @@ ssp-android = { module = "com.intuit.ssp:ssp-android", version.ref = "sspAndroid
 swipeactionview = { module = "com.github.Tunous:SwipeActionView", version.ref = "swipeactionview" }
 toggle = { module = "com.github.angads25:toggle", version.ref = "toggle" }
 firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore", version.ref = "firebaseFirestore" }
+androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workRuntime" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

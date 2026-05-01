@@ -9,6 +9,9 @@ interface DiscountDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(discount: Discount)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(discounts: List<Discount>)
+
     @Query("SELECT * FROM discount_table WHERE id = :id LIMIT 1")
     suspend fun getDiscountById(id: Int): Discount?
 
@@ -26,4 +29,7 @@ interface DiscountDao {
 
     @Delete
     suspend fun delete(discount: Discount)
+
+    @Query("DELETE FROM discount_table")
+    suspend fun deleteAllDiscounts()
 }

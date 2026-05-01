@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/rel_activate"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -13,28 +14,46 @@
         android:layout_marginHorizontal="@dimen/_20sdp"
         android:orientation="vertical">
 
-        <EditText
-            android:id="@+id/et_code"
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/til_activation_name"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:fontFamily="@font/lato_regular"
-            android:gravity="center"
-            android:hint="@string/activation_code"
-            android:imeOptions="actionDone"
-            android:inputType="numberDecimal"
-            android:textColor="@color/black"
-            android:textColorHint="@color/edit_text"
-            android:textSize="@dimen/_16ssp" />
+            android:layout_marginBottom="16dp"
+            android:hint="Your Name or Business Name">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_activation_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/lato_regular"
+                android:inputType="textPersonName"
+                android:textColor="@color/black" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/til_code"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:hint="@string/activation_code">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etCode"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/lato_regular"
+                android:imeOptions="actionDone"
+                android:inputType="numberDecimal"
+                android:textColor="@color/black" />
+        </com.google.android.material.textfield.TextInputLayout>
 
         <TextView
             android:id="@+id/btn_activate"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
-            android:layout_marginHorizontal="@dimen/_20sdp"
-            android:layout_marginStart="@dimen/_5sdp"
-            android:layout_marginTop="@dimen/_20sdp"
-            android:layout_marginEnd="@dimen/_10sdp"
             android:background="@drawable/edit_text_box"
             android:backgroundTint="?attr/colorPrimary"
             android:fontFamily="@font/lato_bold"

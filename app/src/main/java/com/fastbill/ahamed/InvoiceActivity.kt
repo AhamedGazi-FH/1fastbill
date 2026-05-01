@@ -5,8 +5,10 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
 import android.view.Gravity
+import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -40,6 +42,9 @@ class InvoiceActivity : AppCompatActivity() {
     private val invoiceDao by lazy {
         database.invoiceDao()
     }
+    private val itemDao by lazy {
+        database.itemDao()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,12 +60,43 @@ class InvoiceActivity : AppCompatActivity() {
         binding.imgBack.setOnClickListener {
             finish()
         }
+
+        // Show Green "Shared Inbox" button in History screen
+        binding.btnSharedInbox.visibility = View.VISIBLE
+        binding.btnSharedInbox.setOnClickListener {
+            startActivity(Intent(this, SharedInboxActivity::class.java))
+        }
+
+        // Task 2: Smart "Clear History" Button setup
+        binding.btnClearAll.setOnClickListener {
+            showClearAllConfirmation()
+        }
+
         discountList = mutableListOf()
         itemInvoiceAdapter = ItemInvoiceAdapter(discountList, ::onPerformAction)
         binding.rvInvoice.layoutManager = LinearLayoutManager(this)
         binding.rvInvoice.adapter = itemInvoiceAdapter
         fetchAndDisplayDiscounts()
         observeMonthlyKPIs()
+    }
+
+    private fun showClearAllConfirmation() {
+        AlertDialog.Builder(this)
+            .setTitle("Clear History")
+            .setMessage("Are you sure you want to delete all invoice history? This cannot be undone.")
+            .setPositiveButton("Clear All") { _, _ ->
+                clearAllInvoices()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun clearAllInvoices() {
+        lifecycleScope.launch {
+            itemDao.deleteAllItems()
+            invoiceDao.deleteAllInvoices()
+            fetchAndDisplayDiscounts()
+        }
     }
 
     private fun observeMonthlyKPIs() {
@@ -165,6 +201,10 @@ class InvoiceActivity : AppCompatActivity() {
     private fun fetchAndDisplayDiscounts() {
         lifecycleScope.launch {
             val invoices = invoiceDao.getAllInvoices()
+            
+            // Task 2: Toggle Clear All button visibility based on list size
+            binding.btnClearAll.visibility = if (invoices.isNotEmpty()) View.VISIBLE else View.GONE
+            
             val groupedList = groupInvoicesByDate(invoices)
             discountList.clear()
             discountList.addAll(groupedList)

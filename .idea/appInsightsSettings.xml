@@ -20,6 +20,14 @@
         <entry key="Firebase Crashlytics">
           <value>
             <InsightsFilterSettings>
+              <option name="connection">
+                <ConnectionSetting>
+                  <option name="appId" value="com.fastbill.ahamed" />
+                  <option name="mobileSdkAppId" value="1:1089501127385:android:ceabc92699eaf21073d4c8" />
+                  <option name="projectId" value="fastbill-d4e86" />
+                  <option name="projectNumber" value="1089501127385" />
+                </ConnectionSetting>
+              </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />
               <option name="timeIntervalDays" value="THIRTY_DAYS" />
               <option name="visibilityType" value="ALL" />

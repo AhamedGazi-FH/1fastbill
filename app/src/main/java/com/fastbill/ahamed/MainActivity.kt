@@ -26,6 +26,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.view.ContextThemeWrapper
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -34,20 +35,29 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.work.Constraints
+import androidx.work.NetworkType
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.ExistingPeriodicWorkPolicy
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.chip.Chip
 import com.fastbill.ahamed.adapter.ItemAdapter
 import com.fastbill.ahamed.adapter.ItemDiscountAdapter
+import com.fastbill.ahamed.database.Customer
 import com.fastbill.ahamed.database.Discount
 import com.fastbill.ahamed.database.Invoice
 import com.fastbill.ahamed.database.InvoiceDatabase
 import com.fastbill.ahamed.database.InvoiceDiscount
 import com.fastbill.ahamed.database.Rate
 import com.fastbill.ahamed.database.SyncManager
+import com.fastbill.ahamed.database.PeriodicBackupWorker
+import com.fastbill.ahamed.database.ShareManager
 import com.fastbill.ahamed.databinding.ActivityMainBinding
 import com.fastbill.ahamed.databinding.BottomSheetSettingsBinding
 import com.fastbill.ahamed.databinding.EditDiscountDialogBinding
 import com.fastbill.ahamed.model.DiscountAction
+import com.fastbill.ahamed.model.SharedDataHolder
 import com.fastbill.ahamed.model.TemporaryItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -57,6 +67,7 @@ import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
 
 
@@ -93,11 +104,15 @@ class MainActivity : AppCompatActivity() {
     private val syncManager by lazy {
         SyncManager(this)
     }
+    private val shareManager by lazy {
+        ShareManager(this)
+    }
 
     private lateinit var customerAdapter: ArrayAdapter<String>
-    private var invoiceId = -1
+    private var invoiceId = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO)
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -110,7 +125,13 @@ class MainActivity : AppCompatActivity() {
 
         sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE)
         
-        checkAndPerformAutoSync()
+        // Safety wrap for initialization
+        try {
+            checkAndPerformAutoSync()
+            schedulePeriodicBackup()
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Error during startup sync/backup init: ${e.message}")
+        }
 
         val isActivated = sharedPreferences.getBoolean("isActivated", false)
         if (isActivated) {
@@ -126,19 +147,23 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             binding.activate.btnActivate.setOnClickListener {
+                val name = binding.activate.etActivationName.text.toString().trim()
                 val code = binding.activate.etCode.text.toString().toLongOrNull() ?: 0
-                if (code > 0 && (code == Utils.ACTIVATION_CODE)) {
+                
+                if (name.isNotEmpty() && code > 0 && code == Utils.ACTIVATION_CODE) {
                     binding.activate.relActivate.visibility = View.GONE
-                    val editor = sharedPreferences.edit()
-                    editor.putBoolean("isActivated", true)
-                    editor.apply()
+                    sharedPreferences.edit()
+                        .putBoolean("isActivated", true)
+                        .putString("default_backup_name", name)
+                        .apply()
+                        
                     val inputMethodManager =
                         getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
                     inputMethodManager.hideSoftInputFromWindow(
                         binding.activate.etCode.windowToken, 0
                     )
                 } else {
-                    Toast.makeText(this, "Please enter valid code", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Please enter a valid name and code", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -159,6 +184,30 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnQuickSetup.setOnClickListener {
             showQuickSetupBottomSheet()
+        }
+
+        binding.imgShareFirebase.setOnClickListener {
+            val name = binding.edtUsername.text.toString().trim()
+            if (name.isNotEmpty()) {
+                if (itemList.isNotEmpty()) {
+                    val total = binding.tvFinalTotal.text.toString().replace(Regex("[^0-9.]"), "").toDoubleOrNull() ?: 0.0
+                    val invoice = Invoice(name = name, total = total, timestamp = System.currentTimeMillis())
+                    val items = itemList.map { temp ->
+                        com.fastbill.ahamed.database.Item(
+                            name = temp.name,
+                            quantity = temp.quantity,
+                            rate = temp.rate,
+                            total = temp.total
+                        )
+                    }
+                    val senderName = sharedPreferences.getString("default_backup_name", "Unknown Sender") ?: "Unknown Sender"
+                    shareManager.shareBillTemporarily(invoice, items, senderName)
+                } else {
+                    Toast.makeText(this, "Please add items to share", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(this, "Please enter customer name", Toast.LENGTH_SHORT).show()
+            }
         }
 
         // Initialize item list and adapter
@@ -195,10 +244,9 @@ class MainActivity : AppCompatActivity() {
                 lifecycleScope.launch {
                     discountList.forEachIndexed { index, discount ->
                         discount.orderIndex = index
-                        discountDao.update(discount)
+                        // No DB update here, keep it local to the bill
                         updateSummary()
                     }
-//                    fetchAndDisplayDiscounts()
                 }
                 return true
             }
@@ -221,9 +269,9 @@ class MainActivity : AppCompatActivity() {
         binding.indexTextView.text = "${itemList.size + 1}."
         // Add item button click listener
         binding.addItemButton.setOnClickListener {
-            val name = binding.itemNameInput.text.toString().trim()
-            val quantity = binding.quantityInput.text.toString().toIntOrNull() ?: 0
-            val rate = binding.rateInput.text.toString().toDoubleOrNull() ?: 0.00
+            val name = binding.itemNameInput.text?.toString()?.trim() ?: ""
+            val quantity = binding.quantityInput.text?.toString()?.toIntOrNull() ?: 0
+            val rate = binding.rateInput.text?.toString()?.toDoubleOrNull() ?: 0.00
             val total = quantity * rate
 
             if (name.isNotEmpty() && quantity > 0 && rate > 0) {
@@ -254,15 +302,26 @@ class MainActivity : AppCompatActivity() {
             val name = binding.edtUsername.text.toString().trim()
             val total = binding.tvFinalTotal.text.toString().replace(Regex("[^0-9.]"), "").toDoubleOrNull() ?: 0.0
             if (name.isNotEmpty()) {
-                if (itemList.size > 0) {
+                if (itemList.isNotEmpty()) {
                     val invoice =
                         Invoice(name = name, timestamp = System.currentTimeMillis(), total = total)
                     lifecycleScope.launch {
-                        if (invoiceId == -1) {
-                            val invoiceId = invoiceDao.insert(invoice).toInt()
-                            // Save active discounts for the invoice
-                            val activeDiscounts = discountList.filter { it.isActive }
-                            activeDiscounts.forEach { discount ->
+                        // Handle potential new customer creation
+                        val existingCustomers = customerDao.searchCustomers(name)
+                        if (existingCustomers.isEmpty()) {
+                            val newCustomer = Customer(
+                                customerName = name,
+                                isSynced = false,
+                                firestoreId = ""
+                            )
+                            customerDao.insertCustomer(newCustomer)
+                        }
+
+                        if (invoiceId == 0) {
+                            val newId = invoiceDao.insert(invoice).toInt()
+                            invoiceId = newId // Update global ID
+                            // Task 2: Save all discounts in the current bill unconditionally
+                            discountList.forEach { discount ->
                                 val invoiceDiscount = InvoiceDiscount(
                                     invoiceId = invoiceId,
                                     discountId = discount.id,
@@ -282,6 +341,10 @@ class MainActivity : AppCompatActivity() {
                             Toast.makeText(
                                 this@MainActivity, "Record added successfully", Toast.LENGTH_SHORT
                             ).show()
+                            
+                            binding.imgShareFirebase.visibility = View.VISIBLE
+                            binding.btnSave.text = getString(R.string.update)
+
                         } else {
                             invoiceDao.getInvoiceById(invoiceId)?.let {
                                 it.name = name
@@ -289,9 +352,8 @@ class MainActivity : AppCompatActivity() {
                                 invoiceDao.updateInvoice(it)
                                 // Clear old discounts and save new active discounts
                                 invoiceDiscountDao.deleteByInvoiceId(it.invoiceId)
-                                val activeDiscounts =
-                                    discountList.filter { discount -> discount.isActive }
-                                activeDiscounts.forEach { discount ->
+                                // Task 2: Save all discounts in the current bill unconditionally
+                                discountList.forEach { discount ->
                                     val invoiceDiscount = InvoiceDiscount(
                                         invoiceId = invoiceId,
                                         discountId = discount.id,
@@ -316,7 +378,6 @@ class MainActivity : AppCompatActivity() {
                                 ).show()
                             }
                         }
-                        recreateActivityWithAnimation()
                     }
                 } else Toast.makeText(this, "Please add at list one record", Toast.LENGTH_SHORT)
                     .show()
@@ -326,8 +387,8 @@ class MainActivity : AppCompatActivity() {
         binding.btnShare.setOnClickListener {
             val name = binding.edtUsername.text.toString().trim()
             if (name.isNotEmpty()) {
-                if (itemList.size > 0) {
-                    binding.tvName.setText(name)
+                if (itemList.isNotEmpty()) {
+                    binding.tvName.text = name
                     binding.loading.loading.visibility = View.VISIBLE
                     binding.loading.loading.playAnimation()
                     binding.relUser.visibility = View.VISIBLE
@@ -335,7 +396,6 @@ class MainActivity : AppCompatActivity() {
 
                     lifecycleScope.launch {
                         val bitmap = getBitmapFromView(binding.llCapture)
-                        Log.e("check_bitmap", "getting")
                         val savedUri = saveBitmapToCache(bitmap)
                         shareImage(savedUri)
                         withContext(Dispatchers.Main) {
@@ -349,11 +409,21 @@ class MainActivity : AppCompatActivity() {
                     val invoice =
                         Invoice(name = name, timestamp = System.currentTimeMillis(), total = total)
                     lifecycleScope.launch {
-                        if (invoiceId == -1) {
-                            val invoiceId = invoiceDao.insert(invoice).toInt()
-                            // Save active discounts for the invoice
-                            val activeDiscounts = discountList.filter { it.isActive }
-                            activeDiscounts.forEach { discount ->
+                        val existingCustomers = customerDao.searchCustomers(name)
+                        if (existingCustomers.isEmpty()) {
+                            val newCustomer = Customer(
+                                customerName = name,
+                                isSynced = false,
+                                firestoreId = ""
+                            )
+                            customerDao.insertCustomer(newCustomer)
+                        }
+
+                        if (invoiceId == 0) {
+                            val newId = invoiceDao.insert(invoice).toInt()
+                            invoiceId = newId
+                            // Task 2: Save all discounts in the current bill unconditionally
+                            discountList.forEach { discount ->
                                 val invoiceDiscount = InvoiceDiscount(
                                     invoiceId = invoiceId,
                                     discountId = discount.id,
@@ -375,16 +445,18 @@ class MainActivity : AppCompatActivity() {
                             Toast.makeText(
                                 this@MainActivity, "Record added successfully", Toast.LENGTH_SHORT
                             ).show()
+                            
+                            binding.imgShareFirebase.visibility = View.VISIBLE
+                            binding.btnSave.text = getString(R.string.update)
+
                         } else {
                             invoiceDao.getInvoiceById(invoiceId)?.let {
                                 it.name = name
                                 it.total = total
                                 invoiceDao.updateInvoice(it)
-                                // Clear old discounts and save new active discounts
                                 invoiceDiscountDao.deleteByInvoiceId(it.invoiceId)
-                                val activeDiscounts =
-                                    discountList.filter { discount -> discount.isActive }
-                                activeDiscounts.forEach { discount ->
+                                // Task 2: Save all discounts in the current bill unconditionally
+                                discountList.forEach { discount ->
                                     val invoiceDiscount = InvoiceDiscount(
                                         invoiceId = invoiceId,
                                         discountId = discount.id,
@@ -409,7 +481,6 @@ class MainActivity : AppCompatActivity() {
                                 ).show()
                             }
                         }
-                        recreateActivityWithAnimation()
                     }
                 } else Toast.makeText(this, "Please add at list one record", Toast.LENGTH_SHORT)
                     .show()
@@ -418,22 +489,45 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnShare.setOnLongClickListener {
             showQuickShareSettings()
-            true // Consume the long click
+            true
         }
 
         addTextWatchers()
 
-        if (intent.hasExtra("invoiceId")) {
-            invoiceId = intent.getIntExtra("invoiceId", -1)
-            if (invoiceId != -1) {
-                binding.btnSave.setText(getString(R.string.update))
-
+        if (intent.hasExtra("shared_customer_name")) {
+            val sharedName = intent.getStringExtra("shared_customer_name")
+            binding.edtUsername.setText(sharedName)
+            binding.tvName.text = sharedName
+            
+            SharedDataHolder.itemsToAdopt?.let { items ->
+                val temporaryItemList = items.map { item: com.fastbill.ahamed.database.Item ->
+                    TemporaryItem(
+                        name = item.name,
+                        quantity = item.quantity,
+                        rate = item.rate,
+                        total = item.total
+                    )
+                }
+                itemList.addAll(temporaryItemList)
+                adapter.notifyDataSetChanged()
+                SharedDataHolder.itemsToAdopt = null 
+                updateSummary()
             }
-            Log.e("invoiceId", "invoiceId: $invoiceId")
+            invoiceId = 0
+            binding.imgShareFirebase.visibility = View.GONE
+        } else if (intent.hasExtra("invoiceId")) {
+            invoiceId = intent.getIntExtra("invoiceId", 0)
+            if (invoiceId != 0) {
+                binding.btnSave.text = getString(R.string.update)
+                binding.imgShareFirebase.visibility = View.VISIBLE
+            } else {
+                binding.imgShareFirebase.visibility = View.GONE
+            }
+
             lifecycleScope.launch {
                 invoiceDao.getInvoiceById(invoiceId)?.let {
                     binding.edtUsername.setText(it.name)
-                    binding.tvName.setText(it.name)
+                    binding.tvName.text = it.name
                     val date = convertTimestampToDate(it.timestamp)
                     binding.tvDate.text = date
                     binding.tvPrintDate.text = date
@@ -450,50 +544,25 @@ class MainActivity : AppCompatActivity() {
                 itemList.addAll(temporaryItemList)
                 adapter.notifyDataSetChanged()
 
-                // Fetch all discounts and linked discounts
-                val allDiscounts = discountDao.getAllDiscounts()
+                // Task 3: Safely Load Old Invoices
                 val linkedDiscounts = invoiceDiscountDao.getDiscountsForInvoice(invoiceId)
-
-                // Create a map for quick lookup of linked discounts by discountId
-                val linkedDiscountMap = linkedDiscounts.associateBy { it.discountId }
-
-                // Prepare a list of updated discounts to persist in the database
-                val updatedDiscounts = mutableListOf<Discount>()
-
-                allDiscounts.forEach { discount ->
-                    val linkedDiscount = linkedDiscountMap[discount.id]
-                    if (linkedDiscount != null) {
-                        // Update discount with data from linkedDiscount
-                        discount.isActive = true
-                        discount.title = linkedDiscount.title
-                        discount.percentage = linkedDiscount.percentage
-                        discount.price = linkedDiscount.price
-                        discount.isPlus = linkedDiscount.isPlus
-                    } else {
-                        // Deactivate the discount if not linked
-                        discount.isActive = false
-                    }
-                    updatedDiscounts.add(discount)
+                discountList.clear()
+                linkedDiscounts.forEach { linked ->
+                    discountList.add(Discount(
+                        id = linked.discountId, title = linked.title, percentage = linked.percentage,
+                        price = linked.price, isPlus = linked.isPlus, isActive = true, orderIndex = 0
+                    ))
                 }
-
-                // Batch update all discounts in the database
-                discountDao.updateAll(updatedDiscounts)
-
-                fetchAndDisplayDiscounts()
+                discountAdapter.notifyDataSetChanged()
                 updateSummary()
             }
         } else {
             val date = convertTimestampToDate(System.currentTimeMillis())
             binding.tvDate.text = date
             binding.tvPrintDate.text = date
-            lifecycleScope.launch {
-                val allDiscounts = discountDao.getAllDiscounts()
-                allDiscounts.forEach { discount ->
-                    discount.percentage = 0
-                    discount.price = 0.0
-                    discountDao.update(discount)
-                }
-            }
+            
+            invoiceId = 0
+            binding.imgShareFirebase.visibility = View.GONE
         }
 
         setupCustomerAutocomplete()
@@ -506,14 +575,34 @@ class MainActivity : AppCompatActivity() {
 
         if (currentTime - lastSync > fortyEightHoursInMillis) {
             lifecycleScope.launch(Dispatchers.IO) {
-                val fetchResult = syncManager.fetchNewCustomers()
-                val pushResult = syncManager.pushUnsyncedCustomers()
-                
-                if (fetchResult.isSuccess && pushResult.isSuccess) {
-                    sharedPreferences.edit().putLong("last_sync_timestamp", System.currentTimeMillis()).apply()
+                try {
+                    val fetchResult = syncManager.fetchNewCustomers()
+                    val pushResult = syncManager.pushUnsyncedCustomers()
+                    
+                    if (fetchResult.isSuccess && pushResult.isSuccess) {
+                        sharedPreferences.edit().putLong("last_sync_timestamp", System.currentTimeMillis()).apply()
+                    }
+                } catch (e: Exception) {
+                    Log.e("MainActivity", "Auto-sync failed: ${e.message}")
                 }
             }
         }
+    }
+
+    private fun schedulePeriodicBackup() {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        val backupRequest = PeriodicWorkRequestBuilder<PeriodicBackupWorker>(10, TimeUnit.DAYS)
+            .setConstraints(constraints)
+            .build()
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "AppBackupJob",
+            ExistingPeriodicWorkPolicy.KEEP,
+            backupRequest
+        )
     }
 
     private fun setupCustomerAutocomplete() {
@@ -524,7 +613,7 @@ class MainActivity : AppCompatActivity() {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val query = s?.toString()?.trim() ?: ""
-                if (query.length >= 1) {
+                if (query.isNotEmpty()) {
                     lifecycleScope.launch {
                         val results = customerDao.searchCustomers("%$query%")
                         val names = results.map { it.customerName }
@@ -538,7 +627,7 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
-    private fun shareImage(file: File) {
+    private fun shareImage(file: File, overridePackage: String? = null, overridePhone: String? = null) {
         val uri = androidx.core.content.FileProvider.getUriForFile(this, "${packageName}.fileprovider", file)
         
         val intent = Intent(Intent.ACTION_SEND).apply {
@@ -549,7 +638,6 @@ class MainActivity : AppCompatActivity() {
 
         val prefs = getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
         
-        // 1. Handle Caption
         if (prefs.getBoolean("share_caption", true)) {
             val totalPcs = itemList.sumOf { it.quantity }
             val totalAmount = binding.tvFinalTotal.text.toString()
@@ -568,25 +656,23 @@ class MainActivity : AppCompatActivity() {
             intent.putExtra(Intent.EXTRA_TEXT, caption)
         }
 
-        // 2. Handle App Selection
-        val shareApp = prefs.getString("share_app", "other")
-        if (shareApp == "wa") {
+        val shareApp = overridePackage ?: prefs.getString("share_app", "other")
+        if (shareApp == "wa" || shareApp == "com.whatsapp") {
             intent.setPackage("com.whatsapp")
-        } else if (shareApp == "wa_biz") {
+        } else if (shareApp == "wa_biz" || shareApp == "com.whatsapp.w4b") {
             intent.setPackage("com.whatsapp.w4b")
         }
 
-        // 3. Handle Default Number
-        if ((shareApp == "wa" || shareApp == "wa_biz") && prefs.getBoolean("share_number_on", false)) {
-            var phone = prefs.getString("share_number_val", "") ?: ""
-            phone = phone.replace("+", "").replace(" ", "")
-            if (phone.isNotEmpty()) {
-                intent.putExtra("jid", "$phone@s.whatsapp.net")
+        val phone = overridePhone
+        if (!phone.isNullOrEmpty() && (intent.`package` == "com.whatsapp" || intent.`package` == "com.whatsapp.w4b")) {
+            val formattedPhone = phone.replace("+", "").replace(" ", "")
+            if (formattedPhone.isNotEmpty()) {
+                intent.putExtra("jid", "$formattedPhone@s.whatsapp.net")
             }
         }
 
         try {
-            if (shareApp == "wa" || shareApp == "wa_biz") {
+            if (intent.`package` != null) {
                 startActivity(intent)
             } else {
                 startActivity(Intent.createChooser(intent, "Share Invoice"))
@@ -612,7 +698,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private suspend fun getBitmapFromView(view: View): Bitmap = withContext(Dispatchers.Main) {
-        // Ensure RecyclerView has finished rendering
         if (view is ViewGroup) {
             for (i in 0 until view.childCount) {
                 val child = view.getChildAt(i)
@@ -626,13 +711,11 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Measure the parent view properly
         val widthSpec = View.MeasureSpec.makeMeasureSpec(view.width, View.MeasureSpec.EXACTLY)
         val heightSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
         view.measure(widthSpec, heightSpec)
         view.layout(0, 0, view.measuredWidth, view.measuredHeight)
 
-        // Create a bitmap
         val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         view.draw(canvas)
@@ -642,22 +725,11 @@ class MainActivity : AppCompatActivity() {
 
 
     private fun recreateActivityWithAnimation() {
-        lifecycleScope.launch {
-            val allDiscounts = discountDao.getAllDiscounts()
-            allDiscounts.forEach { discount ->
-                discount.percentage = 0
-                discount.price = 0.0
-                discountDao.update(discount)
-            }
-        }
-        // Create an empty intent to restart the activity
+        // Task 1: Stop DB Wiping on Fresh Bills
         val intent = Intent(this, this::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
-        // Start the activity
         startActivity(intent)
-        // Add animations for the transition
         overridePendingTransition(R.anim.slide_in, R.anim.slide_out)
-        // Finish the current activity
         finish()
     }
 
@@ -665,20 +737,21 @@ class MainActivity : AppCompatActivity() {
         for (editText in editTexts) {
             editText.text.clear()
         }
-        // Hide the "Add to List" button after clearing inputs
         binding.addItemButton.visibility = View.GONE
         val defaultQuantity = sharedPreferences.getInt("default_quantity", 4)
-        binding.quantityInput.setText("$defaultQuantity")
+        binding.quantityInput.setText(defaultQuantity.toString())
     }
 
+    // Task 5: Fix onResume Fetching
     private fun fetchAndDisplayDiscounts() {
-        lifecycleScope.launch {
-            discountList.clear()
-            val activeList = discountDao.getAllDiscountsSorted().filter { it.isActive }
-            discountList.addAll(activeList)
-            discountAdapter.notifyDataSetChanged()
-            updateSummary()
-            Log.e("check_size", "Size: ${discountList.size}")
+        if (invoiceId == 0 && itemList.isEmpty()) { 
+            lifecycleScope.launch {
+                discountList.clear()
+                val activeList = discountDao.getAllDiscountsSorted().filter { it.isActive }
+                discountList.addAll(activeList.map { it.copy() })
+                discountAdapter.notifyDataSetChanged()
+                updateSummary()
+            }
         }
     }
     private fun updateSummary() {
@@ -690,7 +763,8 @@ class MainActivity : AppCompatActivity() {
         if (discountList.isNotEmpty()) {
             discountAdapter.updateSum(sum)
             discountAdapter.notifyDataSetChanged()
-            val activeList = discountList.filter { it.isActive }.sortedBy { it.orderIndex }
+            // Task 1: Apply all discounts in the current bill unconditionally
+            val activeList = discountList.sortedBy { it.orderIndex }
             total = activeList.fold(sum) { currentSum, discount ->
                 val value = if (discount.percentage > 0) {
                     currentSum * (discount.percentage / 100.0)
@@ -706,7 +780,6 @@ class MainActivity : AppCompatActivity() {
         } else {
             discountAdapter.notifyDataSetChanged()
         }
-        // Use Indian numbering system for commas
         val indianFormat = java.text.NumberFormat.getNumberInstance(java.util.Locale("en", "IN"))
 
         val roundedSum = sum.roundToInt()
@@ -727,7 +800,6 @@ class MainActivity : AppCompatActivity() {
             }
         })
 
-        // Add a text watcher to quantityInput
         binding.quantityInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
@@ -737,7 +809,6 @@ class MainActivity : AppCompatActivity() {
             override fun afterTextChanged(s: Editable?) {}
         })
 
-        // Add a text watcher to rateInput
         binding.rateInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
@@ -748,10 +819,10 @@ class MainActivity : AppCompatActivity() {
         })
         binding.rateInput.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_DONE) {
-                if (binding.rateInput.text.isNotEmpty()) {
-                    val name = binding.itemNameInput.text.toString().trim()
-                    val quantity = binding.quantityInput.text.toString().toIntOrNull() ?: 0
-                    val rate = binding.rateInput.text.toString().toDoubleOrNull() ?: 0.00
+                if (binding.rateInput.text?.isNotEmpty() == true) {
+                    val name = binding.itemNameInput.text?.toString()?.trim() ?: ""
+                    val quantity = binding.quantityInput.text?.toString()?.toIntOrNull() ?: 0
+                    val rate = binding.rateInput.text?.toString()?.toDoubleOrNull() ?: 0.00
 
                     if (name.isNotEmpty() && quantity > 0 && rate > 0) {
                         binding.addItemButton.performClick()
@@ -762,13 +833,13 @@ class MainActivity : AppCompatActivity() {
                     Toast.makeText(this, "Enter Rate!", Toast.LENGTH_SHORT).show()
                     return@setOnEditorActionListener true
                 }
-                true // Consume the event
+                true 
             } else {
-                false // Let the system handle other actions
+                false 
             }
         }
         binding.itemNameInput.setOnEditorActionListener { _, actionId, _ ->
-            val itemName = binding.itemNameInput.text.toString().trim()
+            val itemName = binding.itemNameInput.text?.toString()?.trim() ?: ""
             if (itemName.isNotEmpty()) {
                 lifecycleScope.launch {
                     val rate = rateDao.getRateByItemName(itemName)
@@ -779,7 +850,7 @@ class MainActivity : AppCompatActivity() {
             }
             binding.quantityInput.selectAll()
             if (actionId == EditorInfo.IME_ACTION_NEXT) {
-                if (binding.itemNameInput.text.isNotEmpty()) {
+                if (binding.itemNameInput.text?.isNotEmpty() == true) {
                     binding.quantityInput.requestFocus()
                     return@setOnEditorActionListener true
                 } else {
@@ -791,11 +862,11 @@ class MainActivity : AppCompatActivity() {
             false
         }
         binding.quantityInput.setOnEditorActionListener { _, actionId, _ ->
-            if (binding.rateInput.text.isNotEmpty()) {
+            if (binding.rateInput.text?.isNotEmpty() == true) {
                 binding.rateInput.selectAll()
             }
             if (actionId == EditorInfo.IME_ACTION_NEXT) {
-                if (binding.quantityInput.text.isNotEmpty()) {
+                if (binding.quantityInput.text?.isNotEmpty() == true) {
                     binding.rateInput.requestFocus()
                     return@setOnEditorActionListener true
                 } else {
@@ -808,11 +879,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun validateInputs() {
-        val name = binding.itemNameInput.text.toString().trim()
-        val quantity = binding.quantityInput.text.toString().toIntOrNull() ?: 0
-        val rate = binding.rateInput.text.toString().toDoubleOrNull() ?: 0.00
+        val name = binding.itemNameInput.text?.toString()?.trim() ?: ""
+        val quantity = binding.quantityInput.text?.toString()?.toIntOrNull() ?: 0
+        val rate = binding.rateInput.text?.toString()?.toDoubleOrNull() ?: 0.00
 
-        // Show or hide the "Add to List" button based on input validity
         if (name.isNotEmpty() && quantity > 0 && rate > 0) {
             binding.addItemButton.visibility = View.VISIBLE
         } else {
@@ -821,8 +891,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun calculateTotal() {
-        val quantity = binding.quantityInput.text.toString().toIntOrNull() ?: 0
-        val rate = binding.rateInput.text.toString().toDoubleOrNull() ?: 0.00
+        val quantity = binding.quantityInput.text?.toString()?.toIntOrNull() ?: 0
+        val rate = binding.rateInput.text?.toString()?.toDoubleOrNull() ?: 0.00
         val total = quantity * rate
 
         binding.tvTotalItem.text = String.format(Locale.US, "%.2f", total)
@@ -831,7 +901,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         val defaultQuantity = sharedPreferences.getInt("default_quantity", 4)
-        binding.quantityInput.setText("$defaultQuantity")
+        binding.quantityInput.setText(defaultQuantity.toString())
         selectedColorCode =
             sharedPreferences.getString("selected_color_code", "#6750A4") ?: "#6750A4"
 
@@ -878,7 +948,6 @@ class MainActivity : AppCompatActivity() {
             dialogView.etPrice.setText("")
         }
 
-        // Setting state from currentItem
         if (currentItem.isPlus) {
             dialogView.rgIsAdd.check(R.id.rb_plus)
         } else {
@@ -886,38 +955,35 @@ class MainActivity : AppCompatActivity() {
         }
         dialogView.switchIsActive.isChecked = currentItem.isActive
 
-        // Add TextWatcher to etPercentage
         dialogView.etPercentage.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 if (s?.isNotEmpty() == true) {
-                    dialogView.etPrice.setText("") // Clear price when percentage is typed
+                    dialogView.etPrice.setText("") 
                 }
             }
 
             override fun afterTextChanged(s: Editable?) {}
         })
 
-        // Add TextWatcher to etPrice
         dialogView.etPrice.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 if (s?.isNotEmpty() == true) {
-                    dialogView.etPercentage.setText("") // Clear percentage when price is typed
+                    dialogView.etPercentage.setText("") 
                 }
             }
 
             override fun afterTextChanged(s: Editable?) {}
         })
         val titleTextView = TextView(this).apply {
-            text = "Edit" // Set the title text
-            textSize = 18f // Set the text size
-            setTextColor(Color.BLACK) // Set the text color to black
-            setTypeface(null, Typeface.BOLD) // Make the text bold
+            text = "Edit" 
+            textSize = 18f 
+            setTextColor(Color.BLACK) 
+            setTypeface(null, Typeface.BOLD) 
             setPadding(0, 30, 0, 10)
-            // Optionally, set a custom font
             typeface = ResourcesCompat.getFont(context, R.font.lato_bold)
-            gravity = Gravity.CENTER // Center-align the text
+            gravity = Gravity.CENTER 
         }
         dialog = AlertDialog.Builder(this).setView(dialogView.root).setCustomTitle(titleTextView)
             .setPositiveButton("Save") { _, _ ->
@@ -925,24 +991,10 @@ class MainActivity : AppCompatActivity() {
                 val percentageInput = dialogView.etPercentage.text.toString().trim()
                 val priceInput = dialogView.etPrice.text.toString().trim()
 
-//                if (title.isEmpty()) {
-//                    Toast.makeText(this, "Please enter a title", Toast.LENGTH_SHORT).show()
-//                    return@setPositiveButton
-//                }
-//
-//                if (percentageInput.isEmpty() && priceInput.isEmpty()) {
-//                    Toast.makeText(
-//                        this, "Please enter either percentage or price", Toast.LENGTH_SHORT
-//                    ).show()
-//                    return@setPositiveButton
-//                }
-
-                // Parse percentage and price
                 val percentage =
                     if (percentageInput.isNotEmpty()) percentageInput.toIntOrNull() else 0
                 val price = if (priceInput.isNotEmpty()) priceInput.toDoubleOrNull() ?: 0.0 else 0.0
 
-                // Reading state from RadioGroup and SwitchCompat
                 val isPlus = dialogView.rgIsAdd.checkedRadioButtonId == R.id.rb_plus
                 val isActive = dialogView.switchIsActive.isChecked
 
@@ -951,22 +1003,17 @@ class MainActivity : AppCompatActivity() {
                 discountList[position].price = price
                 discountList[position].isPlus = isPlus
                 discountList[position].isActive = isActive
-                lifecycleScope.launch {
-                    discountDao.update(discountList[position])
-                    fetchAndDisplayDiscounts()
-                }
+                
+                // Note: Edits in MainActivity are now local to the bill only. 
+                // We do not call discountDao.update here.
+                discountAdapter.notifyDataSetChanged()
+                updateSummary()
             }.setNegativeButton("Cancel", null).create()
 
-// Set a white background for the dialog
         dialog?.window?.setBackgroundDrawable(ColorDrawable(Color.WHITE))
-
-        // Set the dialog to force the soft keyboard open
         dialog?.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
-
-        // Show the dialog
         dialog?.show()
 
-        // Focus the appropriate amount field and highlight the text
         val focusView = if (currentItem.percentage > 0) dialogView.etPercentage else dialogView.etPrice
         focusView.requestFocus()
         focusView.selectAll()
@@ -1012,18 +1059,15 @@ class MainActivity : AppCompatActivity() {
             }
             views[index].background = drawable
 
-            // Set red border for selected, normal for others
             cardView.setCardBackgroundColor(
                 if (color == selectedColorCode) Color.parseColor("#FF0000") else Color.parseColor(color)
             )
 
-            // Click listener for the card
             cardView.setOnClickListener {
                 selectedColorCode = color
                 sharedPreferences.edit().putString("selected_color_code", color).apply()
                 binding.llBottomFinal.setBackgroundColor(Color.parseColor(color))
                 
-                // Update borders instantly inside the bottom sheet
                 cardViews.forEachIndexed { i, cv ->
                     cv.setCardBackgroundColor(
                         if (colorList[i] == selectedColorCode) Color.parseColor("#FF0000") else Color.parseColor(colorList[i])
@@ -1043,7 +1087,10 @@ class MainActivity : AppCompatActivity() {
                     val valText = if (discount.percentage > 0) "${discount.percentage}%" else "₹${discount.price.toInt()}"
                     chip.text = "${discount.title} ($valText)"
                     chip.isCheckable = true
-                    chip.isChecked = discount.isActive
+                    
+                    // Task 4: Fix Quick Setup Toggle - Check local list, not global DB
+                    val isCurrentlyApplied = discountList.any { it.id == discount.id }
+                    chip.isChecked = isCurrentlyApplied
                     
                     try {
                         val checkedIconVisibleField = chip.javaClass.getMethod("setCheckedIconVisible", Boolean::class.javaPrimitiveType)
@@ -1063,12 +1110,19 @@ class MainActivity : AppCompatActivity() {
                     }
                     chip.chipBackgroundColor = ColorStateList(states, colors)
 
+                    // Task 4: Fix Quick Setup Toggle - Update local list
                     chip.setOnCheckedChangeListener { _, isChecked ->
-                        discount.isActive = isChecked
-                        lifecycleScope.launch {
-                            discountDao.update(discount)
-                            fetchAndDisplayDiscounts()
+                        if (isChecked) {
+                            if (discountList.none { it.id == discount.id }) {
+                                // Task 3: Force active for current UI
+                                discountList.add(discount.copy(isActive = true))
+                            }
+                        } else {
+                            discountList.removeAll { it.id == discount.id }
                         }
+                        // DO NOT call discountDao.update() here
+                        discountAdapter.notifyDataSetChanged()
+                        updateSummary()
                     }
 
                     if (discount.isPlus) {
@@ -1084,47 +1138,140 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showQuickShareSettings() {
-        val bottomSheetDialog = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+        val bottomSheetDialog = BottomSheetDialog(this)
         val view = layoutInflater.inflate(R.layout.bottom_sheet_share_settings, null)
         bottomSheetDialog.setContentView(view)
 
         val prefs = getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
 
+        val cgShareAppVisual = view.findViewById<com.google.android.material.chip.ChipGroup>(R.id.cg_share_app_visual)
         val rgShareApp = view.findViewById<android.widget.RadioGroup>(R.id.rg_share_app)
         val switchCaption = view.findViewById<androidx.appcompat.widget.SwitchCompat>(R.id.switch_caption)
         val switchNumber = view.findViewById<androidx.appcompat.widget.SwitchCompat>(R.id.switch_number)
-        val etDefaultNumber = view.findViewById<android.widget.EditText>(R.id.et_default_number)
+        val tvCaptionPreview = view.findViewById<TextView>(R.id.tv_caption_preview)
+        
+        val chipGroupNumbers = view.findViewById<com.google.android.material.chip.ChipGroup>(R.id.chipGroupNumbers)
+        val tvSendToLabel = view.findViewById<TextView>(R.id.tv_send_to_label)
+        
+        val chipWa = view.findViewById<Chip>(R.id.chip_wa)
+        val chipWaBiz = view.findViewById<Chip>(R.id.chip_wa_biz)
+        val chipOther = view.findViewById<Chip>(R.id.chip_other)
 
         val shareApp = prefs.getString("share_app", "other")
         when (shareApp) {
-            "wa" -> rgShareApp.check(R.id.rb_wa)
-            "wa_biz" -> rgShareApp.check(R.id.rb_wa_biz)
-            else -> rgShareApp.check(R.id.rb_other)
+            "wa" -> {
+                rgShareApp.check(R.id.rb_wa)
+                cgShareAppVisual.check(R.id.chip_wa)
+            }
+            "wa_biz" -> {
+                rgShareApp.check(R.id.rb_wa_biz)
+                cgShareAppVisual.check(R.id.chip_wa_biz)
+            }
+            else -> {
+                rgShareApp.check(R.id.rb_other)
+                cgShareAppVisual.check(R.id.chip_other)
+            }
         }
 
         switchCaption.isChecked = prefs.getBoolean("share_caption", true)
         val isNumberOn = prefs.getBoolean("share_number_on", false)
         switchNumber.isChecked = isNumberOn
-        etDefaultNumber.visibility = if (isNumberOn) android.view.View.VISIBLE else android.view.View.GONE
-        etDefaultNumber.setText(prefs.getString("share_number_val", ""))
 
-        switchNumber.setOnCheckedChangeListener { _, isChecked ->
-            etDefaultNumber.visibility = if (isChecked) android.view.View.VISIBLE else android.view.View.GONE
+        val updateCaptionPreview = {
+            if (switchCaption.isChecked) {
+                val totalPcs = itemList.sumOf { it.quantity }
+                val totalAmount = binding.tvFinalTotal.text.toString()
+                val customerName = binding.edtUsername.text.toString().trim()
+                
+                val template = prefs.getString("share_caption_template", "*Total {qty} Pcs {total}*") ?: "*Total {qty} Pcs {total}*"
+                val caption = template
+                    .replace("{qty}", totalPcs.toString())
+                    .replace("{total}", totalAmount)
+                    .replace("{name}", customerName)
+                
+                tvCaptionPreview.text = caption
+                tvCaptionPreview.visibility = View.VISIBLE
+            } else {
+                tvCaptionPreview.visibility = View.GONE
+            }
         }
 
-        // Auto-save when the user swipes the sheet away
+        updateCaptionPreview()
+        switchCaption.setOnCheckedChangeListener { _, _ ->
+            updateCaptionPreview()
+        }
+
+        val updateNumberGroupVisibility = {
+            val isDirectOn = switchNumber.isChecked
+            val hasNumbers = listOf(
+                prefs.getString("share_number_1", ""),
+                prefs.getString("share_number_2", ""),
+                prefs.getString("share_number_3", "")
+            ).any { !it.isNullOrEmpty() }
+
+            if (isDirectOn && hasNumbers) {
+                tvSendToLabel.visibility = View.VISIBLE
+                chipGroupNumbers.visibility = View.VISIBLE
+            } else {
+                tvSendToLabel.visibility = View.GONE
+                chipGroupNumbers.visibility = View.GONE
+            }
+        }
+
+        switchNumber.setOnCheckedChangeListener { _, _ ->
+            updateNumberGroupVisibility()
+        }
+
+        val lastSelectedNumber = prefs.getString("last_selected_share_number", "")
+        val numbers = listOf(
+            prefs.getString("share_number_1", ""),
+            prefs.getString("share_number_2", ""),
+            prefs.getString("share_number_3", "")
+        ).filter { !it.isNullOrEmpty() }
+
+        chipGroupNumbers.removeAllViews()
+        var wasAnyChecked = false
+
+        numbers.forEach { number ->
+            val themedContext = ContextThemeWrapper(this, com.google.android.material.R.style.Widget_MaterialComponents_Chip_Choice)
+            val chip = Chip(themedContext)
+            chip.text = number
+            chip.isCheckable = true
+            chip.id = View.generateViewId()
+            
+            if (number == lastSelectedNumber) {
+                chip.isChecked = true
+                wasAnyChecked = true
+            }
+            
+            chipGroupNumbers.addView(chip)
+        }
+        
+        if (!wasAnyChecked && numbers.isNotEmpty()) {
+            (chipGroupNumbers.getChildAt(0) as? Chip)?.isChecked = true
+        }
+        
+        updateNumberGroupVisibility()
+
+        chipGroupNumbers.setOnCheckedStateChangeListener { group, checkedIds ->
+            val checkedId = checkedIds.firstOrNull()
+            if (checkedId != null) {
+                val selectedChip = group.findViewById<Chip>(checkedId)
+                val number = selectedChip?.text?.toString() ?: ""
+                prefs.edit().putString("last_selected_share_number", number).apply()
+            }
+        }
+
         bottomSheetDialog.setOnDismissListener {
-            val editor = prefs.edit()
-            val selectedShareApp = when (rgShareApp.checkedRadioButtonId) {
-                R.id.rb_wa -> "wa"
-                R.id.rb_wa_biz -> "wa_biz"
+            val selectedShareApp = when (cgShareAppVisual.checkedChipId) {
+                R.id.chip_wa -> "wa"
+                R.id.chip_wa_biz -> "wa_biz"
                 else -> "other"
             }
-            editor.putString("share_app", selectedShareApp)
-            editor.putBoolean("share_caption", switchCaption.isChecked)
-            editor.putBoolean("share_number_on", switchNumber.isChecked)
-            editor.putString("share_number_val", etDefaultNumber.text.toString().trim())
-            editor.apply()
+            prefs.edit().putString("share_app", selectedShareApp)
+                .putBoolean("share_caption", switchCaption.isChecked)
+                .putBoolean("share_number_on", switchNumber.isChecked)
+                .apply()
         }
 
         bottomSheetDialog.show()

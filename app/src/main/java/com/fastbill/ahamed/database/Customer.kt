@@ -13,5 +13,6 @@ data class Customer(
     val customerName: String,
     val phoneNumber: String? = null,
     val isSynced: Boolean = false,
-    val firestoreId: String = ""
+    val firestoreId: String = "",
+    val isDeleted: Boolean = false
 )

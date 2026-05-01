@@ -1,53 +1,111 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="#F5F5F5"
     android:orientation="vertical"
-    android:padding="20dp"
-    android:background="@color/white">
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/tv_caption_preview"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:ellipsize="end"
+        android:fontFamily="@font/lato_regular"
+        android:lines="1"
+        android:textStyle="italic"
+        android:textColor="?android:attr/textColorSecondary"
+        android:textSize="14sp"
+        android:visibility="gone" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Quick Share Settings"
-        android:textSize="16sp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="12dp"
         android:fontFamily="@font/lato_bold"
+        android:text="Share Settings"
         android:textColor="@color/black"
-        android:layout_marginBottom="12dp" />
+        android:textSize="14sp" />
 
-    <RadioGroup
-        android:id="@+id/rg_share_app"
+    <!-- Radio Group styled as Chips for modern UX -->
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/cg_share_app_visual"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
-        <RadioButton android:id="@+id/rb_wa" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="WhatsApp " />
-        <RadioButton android:id="@+id/rb_wa_biz" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="WA Biz " />
-        <RadioButton android:id="@+id/rb_other" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Other" />
-    </RadioGroup>
+        android:layout_marginBottom="16dp"
+        app:singleSelection="true"
+        app:selectionRequired="true">
 
-    <androidx.appcompat.widget.SwitchCompat
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip_wa"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="WhatsApp"
+            app:chipIcon="@drawable/ic_share" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip_wa_biz"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="WA Business"
+            app:chipIcon="@drawable/ic_share" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip_other"
+            style="@style/Widget.MaterialComponents.Chip.Choice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Other Apps"
+            app:chipIcon="@drawable/ic_share" />
+    </com.google.android.material.chip.ChipGroup>
+
+    <com.google.android.material.switchmaterial.SwitchMaterial
         android:id="@+id/switch_caption"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:text="Include Total &amp; Pcs Caption" />
+        android:text="Include Auto-Caption"
+        android:textColor="@color/black" />
 
-    <androidx.appcompat.widget.SwitchCompat
+    <com.google.android.material.switchmaterial.SwitchMaterial
         android:id="@+id/switch_number"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:text="Send to Default Number" />
+        android:layout_marginTop="4dp"
+        android:text="Direct to Default Number"
+        android:textColor="@color/black" />
 
-    <EditText
-        android:id="@+id/et_default_number"
-        android:layout_width="match_parent"
+    <TextView
+        android:id="@+id/tv_send_to_label"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
-        android:hint="918347913488"
-        android:inputType="phone"
-        android:background="@drawable/edit_text_box"
-        android:padding="10dp"
-        android:visibility="gone" />
+        android:text="Send to:"
+        android:textColor="#757575"
+        android:textSize="14sp"
+        android:fontFamily="@font/lato_regular" />
+
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/chipGroupNumbers"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        app:singleSelection="true"
+        app:selectionRequired="true" />
+    
+    <!-- Hidden RadioGroup to keep logic compatibility (IDs preserved) -->
+    <RadioGroup
+        android:id="@+id/rg_share_app"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone">
+        <RadioButton android:id="@+id/rb_wa" android:layout_width="0dp" android:layout_height="0dp" />
+        <RadioButton android:id="@+id/rb_wa_biz" android:layout_width="0dp" android:layout_height="0dp" />
+        <RadioButton android:id="@+id/rb_other" android:layout_width="0dp" android:layout_height="0dp" />
+    </RadioGroup>
 
 </LinearLayout>

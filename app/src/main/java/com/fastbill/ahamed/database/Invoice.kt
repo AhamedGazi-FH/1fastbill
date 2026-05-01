@@ -5,9 +5,9 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "invoice_table")
 data class Invoice(
-    @PrimaryKey(autoGenerate = true) val invoiceId: Int = 0, // Primary key
-    var name: String,
-    var timestamp: Long,
-    var total: Double,
-    var discountData: String? = null // Optional field for serialized discounts
+    @PrimaryKey(autoGenerate = true) val invoiceId: Int = 0,
+    var name: String = "",
+    var timestamp: Long = 0L,
+    var total: Double = 0.0,
+    var discountData: String? = null
 )

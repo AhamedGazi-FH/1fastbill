@@ -1,68 +1,134 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/white">
+    android:background="#F5F5F5"
+    android:orientation="vertical"
+    android:padding="16dp">
 
-    <LinearLayout
-        android:id="@+id/ll_add_item"
+    <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="@dimen/_5sdp"
-        android:weightSum="10">
+        app:cardBackgroundColor="@color/white"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="2dp">
 
-        <EditText
-            android:id="@+id/itemNameInput"
-            android:layout_width="0dp"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="4"
-            android:fontFamily="@font/lato_regular"
-            android:gravity="center"
-            android:hint="@string/item_name"
-            android:imeOptions="actionNext"
-            android:inputType="numberDecimal"
-            android:textColor="@color/black"
-            android:textColorHint="@color/edit_text"
-            android:textSize="@dimen/_11ssp" />
+            android:orientation="vertical"
+            android:padding="16dp">
 
-        <EditText
-            android:id="@+id/quantityInput"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="2"
-            android:fontFamily="@font/lato_regular"
-            android:gravity="center"
-            android:hint="@string/quantity"
-            android:imeOptions="actionNext"
-            android:inputType="numberDecimal"
-            android:textColor="@color/black"
-            android:textColorHint="@color/edit_text"
-            android:textSize="@dimen/_11ssp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/item_name"
+                android:textColor="#757575"
+                android:textSize="12sp"
+                android:layout_marginBottom="4dp"/>
 
-        <EditText
-            android:id="@+id/rateInput"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="2"
-            android:fontFamily="@font/lato_regular"
-            android:gravity="center"
-            android:hint="@string/rate"
-            android:imeOptions="actionDone"
-            android:inputType="numberDecimal"
-            android:textColor="@color/black"
-            android:textColorHint="@color/edit_text"
-            android:textSize="@dimen/_11ssp" />
+            <androidx.appcompat.widget.AppCompatEditText
+                android:id="@+id/itemNameInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/bg_underline"
+                android:fontFamily="@font/lato_regular"
+                android:hint="@string/item_name"
+                android:imeOptions="actionNext"
+                android:inputType="number"
+                android:paddingVertical="8dp"
+                android:textColor="@color/black" />
 
-        <TextView
-            android:id="@+id/tv_total_item"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="2"
-            android:fontFamily="@font/lato_bold"
-            android:gravity="center"
-            android:text="0.00"
-            android:textColor="@color/black"
-            android:textSize="@dimen/_11ssp" />
-    </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="12dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/quantity"
+                        android:textColor="#757575"
+                        android:textSize="12sp"
+                        android:layout_marginBottom="4dp"/>
+
+                    <androidx.appcompat.widget.AppCompatEditText
+                        android:id="@+id/quantityInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_underline"
+                        android:fontFamily="@font/lato_regular"
+                        android:hint="@string/quantity"
+                        android:imeOptions="actionNext"
+                        android:inputType="number"
+                        android:paddingVertical="8dp"
+                        android:textColor="@color/black" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/rate"
+                        android:textColor="#757575"
+                        android:textSize="12sp"
+                        android:layout_marginBottom="4dp"/>
+
+                    <androidx.appcompat.widget.AppCompatEditText
+                        android:id="@+id/rateInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_underline"
+                        android:fontFamily="@font/lato_regular"
+                        android:hint="@string/rate"
+                        android:imeOptions="actionDone"
+                        android:inputType="numberDecimal"
+                        android:paddingVertical="8dp"
+                        android:textColor="@color/black" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="@font/lato_bold"
+                    android:text="Total Amount"
+                    android:textColor="#757575"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/tv_total_item"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/lato_bold"
+                    android:text="0.00"
+                    android:textColor="@color/black"
+                    android:textSize="18sp" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
 </LinearLayout>

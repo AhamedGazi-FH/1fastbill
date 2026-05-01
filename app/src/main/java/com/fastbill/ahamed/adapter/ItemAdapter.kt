@@ -6,23 +6,21 @@ import android.graphics.Typeface
 import android.graphics.drawable.ColorDrawable
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.TypedValue
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
-import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
-import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.fastbill.ahamed.R
 import com.fastbill.ahamed.databinding.EditItemDialogBinding
 import com.fastbill.ahamed.databinding.ItemRowBinding
 import com.fastbill.ahamed.model.TemporaryItem
-import kotlinx.coroutines.launch
 import me.thanel.swipeactionview.SwipeActionView
 import me.thanel.swipeactionview.SwipeGestureListener
 import java.util.Locale
@@ -44,7 +42,7 @@ class ItemAdapter(
                     )
                 )
             }
-            itemRowBinding.indexTextView.text = "${adapterPosition + 1}"
+            itemRowBinding.indexTextView.text = (adapterPosition + 1).toString()
             itemRowBinding.itemNameTextView.text = item.name
             itemRowBinding.quantityTextView.text = item.quantity.toString()
 
@@ -52,21 +50,21 @@ class ItemAdapter(
             val normalSize = itemRowBinding.root.context.resources.getDimension(R.dimen._11ssp)
             val largeSize = itemRowBinding.root.context.resources.getDimension(R.dimen._13ssp)
             
-            val boldTypeface = androidx.core.content.res.ResourcesCompat.getFont(itemRowBinding.root.context, R.font.lato_bold)
-            val normalTypeface = androidx.core.content.res.ResourcesCompat.getFont(itemRowBinding.root.context, R.font.lato_regular)
+            val boldTypeface = ResourcesCompat.getFont(itemRowBinding.root.context, R.font.lato_bold)
+            val normalTypeface = ResourcesCompat.getFont(itemRowBinding.root.context, R.font.lato_regular)
 
             if (item.quantity != defaultQty) {
                 itemRowBinding.quantityTextView.typeface = boldTypeface
-                itemRowBinding.quantityTextView.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, largeSize)
-                itemRowBinding.quantityTextView.setTextColor(android.graphics.Color.parseColor("#D32F2F"))
+                itemRowBinding.quantityTextView.setTextSize(TypedValue.COMPLEX_UNIT_PX, largeSize)
+                itemRowBinding.quantityTextView.setTextColor(Color.parseColor("#D32F2F"))
             } else {
                 itemRowBinding.quantityTextView.typeface = normalTypeface
-                itemRowBinding.quantityTextView.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, normalSize)
-                itemRowBinding.quantityTextView.setTextColor(android.graphics.Color.BLACK)
+                itemRowBinding.quantityTextView.setTextSize(TypedValue.COMPLEX_UNIT_PX, normalSize)
+                itemRowBinding.quantityTextView.setTextColor(Color.BLACK)
             }
 
-            itemRowBinding.rateTextView.text = "${item.rate.toInt()}"
-            itemRowBinding.totalTextView.text = "${String.format(Locale.US, "%.2f", item.total)}"
+            itemRowBinding.rateTextView.text = item.rate.toInt().toString()
+            itemRowBinding.totalTextView.text = String.format(Locale.US, "%.2f", item.total)
 
             itemRowBinding.swipeView.swipeGestureListener = object : SwipeGestureListener {
                 override fun onSwipedLeft(swipeActionView: SwipeActionView): Boolean {
@@ -108,15 +106,20 @@ class ItemAdapter(
     override fun getItemCount(): Int = itemList.size
 
     fun removeItem(position: Int) {
-        itemList.removeAt(position)
-        notifyDataSetChanged()
-        onUpdateSummary()
+        if (position != RecyclerView.NO_POSITION) {
+            itemList.removeAt(position)
+            notifyItemRemoved(position)
+            notifyItemRangeChanged(position, itemList.size)
+            onUpdateSummary()
+        }
     }
 
     fun editItem(position: Int, updatedItem: TemporaryItem) {
-        itemList[position] = updatedItem
-        notifyItemChanged(position)
-        onUpdateSummary()
+        if (position != RecyclerView.NO_POSITION) {
+            itemList[position] = updatedItem
+            notifyItemChanged(position)
+            onUpdateSummary()
+        }
     }
 
     private var dialog: AlertDialog? = null
@@ -128,7 +131,7 @@ class ItemAdapter(
         dialogView.itemNameInput.setText(currentItem.name)
         dialogView.quantityInput.setText(currentItem.quantity.toString())
         dialogView.rateInput.setText(currentItem.rate.toString())
-        dialogView.tvTotalItem.setText(String.format(Locale.US, "%.2f", currentItem.total))
+        dialogView.tvTotalItem.text = String.format(Locale.US, "%.2f", currentItem.total)
 
         dialogView.quantityInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -137,9 +140,7 @@ class ItemAdapter(
                 val quantity = dialogView.quantityInput.text.toString().toIntOrNull() ?: 0
                 val rate = dialogView.rateInput.text.toString().toDoubleOrNull() ?: 0.00
                 val total = quantity * rate
-
                 dialogView.tvTotalItem.text = String.format(Locale.US, "%.2f", total)
-
             }
         })
 
@@ -150,16 +151,15 @@ class ItemAdapter(
                 val quantity = dialogView.quantityInput.text.toString().toIntOrNull() ?: 0
                 val rate = dialogView.rateInput.text.toString().toDoubleOrNull() ?: 0.00
                 val total = quantity * rate
-
                 dialogView.tvTotalItem.text = String.format(Locale.US, "%.2f", total)
             }
         })
         dialogView.quantityInput.setOnEditorActionListener { _, actionId, _ ->
-            if (dialogView.rateInput.text.isNotEmpty()) {
+            if (dialogView.rateInput.text?.isNotEmpty() == true) {
                 dialogView.rateInput.selectAll()
             }
             if (actionId == EditorInfo.IME_ACTION_NEXT) {
-                if (dialogView.quantityInput.text.isNotEmpty()) {
+                if (dialogView.quantityInput.text?.isNotEmpty() == true) {
                     dialogView.rateInput.requestFocus()
                     return@setOnEditorActionListener true
                 } else {
@@ -171,7 +171,7 @@ class ItemAdapter(
         }
         dialogView.rateInput.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_DONE) {
-                if (dialogView.rateInput.text.isNotEmpty()) {
+                if (dialogView.rateInput.text?.isNotEmpty() == true) {
                     val name = dialogView.itemNameInput.text.toString().trim()
                     val quantity = dialogView.quantityInput.text.toString().toIntOrNull() ?: 0
                     val rate = dialogView.rateInput.text.toString().toDoubleOrNull() ?: 0.00
@@ -198,9 +198,7 @@ class ItemAdapter(
             text = "Edit Item" // Set the title text
             textSize = 18f // Set the text size
             setTextColor(Color.BLACK) // Set the text color to black
-            setTypeface(null, Typeface.BOLD) // Make the text bold
             setPadding(0, 30, 0, 10)
-            // Optionally, set a custom font
             typeface = ResourcesCompat.getFont(context, R.font.lato_bold)
             gravity = Gravity.CENTER // Center-align the text
         }
@@ -219,11 +217,7 @@ class ItemAdapter(
                 }
             }.setNegativeButton("Cancel", null).create()
 
-// Set a white background for the dialog
         dialog?.window?.setBackgroundDrawable(ColorDrawable(Color.WHITE))
-
-// Show the dialog
         dialog?.show()
-
     }
 }
