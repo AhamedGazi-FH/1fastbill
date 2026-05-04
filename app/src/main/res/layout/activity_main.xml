@@ -161,6 +161,7 @@
             android:hint="@string/quantity"
             android:imeOptions="actionNext"
             android:inputType="number"
+            android:selectAllOnFocus="true"
             android:paddingVertical="8dp"
             android:textColor="@color/black"
             android:textSize="@dimen/_11ssp" />
@@ -177,6 +178,7 @@
             android:hint="@string/rate"
             android:imeOptions="actionDone"
             android:inputType="numberDecimal"
+            android:selectAllOnFocus="true"
             android:paddingVertical="8dp"
             android:textColor="@color/black"
             android:textSize="@dimen/_11ssp" />
@@ -216,10 +218,12 @@
         android:layout_below="@id/addItemButton"
         android:paddingVertical="@dimen/_10sdp">
 
+        <!-- Unified Root Container for the Receipt -->
         <LinearLayout
-            android:id="@+id/ll_capture"
+            android:id="@+id/receipt_root_container"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/white"
             android:orientation="vertical">
 
             <RelativeLayout
@@ -320,7 +324,8 @@
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerView"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" />
+                android:layout_height="wrap_content"
+                android:overScrollMode="never" />
 
             <LinearLayout
                 android:id="@+id/ll_bottom"
@@ -398,7 +403,8 @@
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rv_discount"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
+                    android:layout_height="wrap_content"
+                    android:overScrollMode="never" />
 
                 <LinearLayout
                     android:id="@+id/ll_bottom_final"
@@ -520,10 +526,4 @@
         android:layout_height="match_parent"
         android:layout_centerInParent="true" />
 
-    <include
-        android:id="@+id/activate"
-        layout="@layout/activation_view"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_centerInParent="true" />
 </RelativeLayout>

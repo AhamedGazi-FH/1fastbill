@@ -16,7 +16,7 @@ import kotlin.math.roundToInt
 
 
 class ItemDiscountAdapter(
-    private val discountList: MutableList<Discount>,
+    private var discountList: List<Discount>,
     private val onPerformAction: (position: Int, action: DiscountAction) -> Unit,
     private var sum: Double
 ) : RecyclerView.Adapter<ItemDiscountAdapter.ViewHolder>() {
@@ -26,38 +26,31 @@ class ItemDiscountAdapter(
         fun onBind(item: Discount) {
             itemRowBinding.tvTitle.text = item.title
             if (item.percentage > 0) {
-                itemRowBinding.tvPercentage.visibility= View.VISIBLE
+                itemRowBinding.tvPercentage.visibility = View.VISIBLE
                 itemRowBinding.tvPercentage.text = "${item.percentage}%"
-            }else{
-                itemRowBinding.tvPercentage.visibility= View.INVISIBLE
-            }
-            val calculatedValue = if (item.percentage > 0) {
-                sum * (item.percentage / 100.0)
             } else {
-                item.price
+                itemRowBinding.tvPercentage.visibility = View.INVISIBLE
             }
-// Update the sum based on whether it's addition or subtraction
-            sum += if (item.isPlus) calculatedValue else - calculatedValue
-
-            val roundedCalculated = calculatedValue.roundToInt()
             
-            // Use Indian formatter for commas, no decimals
+            // Task 1 Fix: Use the pre-calculated sequential amount from ViewModel
+            val roundedCalculated = item.amount.roundToInt()
+            
             val indianFormat = java.text.NumberFormat.getNumberInstance(java.util.Locale("en", "IN"))
             val formattedValue = indianFormat.format(roundedCalculated)
             
             val finalValue = "${if (!item.isPlus) "- " else ""}₹ $formattedValue"
             itemRowBinding.tvSum.text = finalValue
 
-            // Apply the light red background directly to the inner layout
             if (!item.isPlus) {
                 itemRowBinding.llDiscountRow.setBackgroundColor(android.graphics.Color.parseColor("#FFE5E5"))
             } else {
                 itemRowBinding.llDiscountRow.setBackgroundColor(android.graphics.Color.WHITE)
             }
 
-            itemRowBinding.swipeView.setDirectionEnabled(SwipeDirection.Left, false);
+            itemRowBinding.swipeView.setDirectionEnabled(SwipeDirection.Left, true)
             itemRowBinding.swipeView.swipeGestureListener = object : SwipeGestureListener {
                 override fun onSwipedLeft(swipeActionView: SwipeActionView): Boolean {
+                    onPerformAction(adapterPosition, DiscountAction.DELETE)
                     return true
                 }
 
@@ -81,12 +74,9 @@ class ItemDiscountAdapter(
 
     override fun getItemCount(): Int = discountList.size
 
-    fun updateSum(updatedSum: Double) {
-        sum = updatedSum
-    }
-    // Method to swap items in the list
-    fun swapItems(fromPosition: Int, toPosition: Int) {
-        Collections.swap(discountList, fromPosition, toPosition)
-        notifyItemMoved(fromPosition, toPosition)
+    fun updateData(newList: List<Discount>, newSum: Double) {
+        this.discountList = newList
+        this.sum = newSum
+        notifyDataSetChanged()
     }
 }

@@ -27,7 +27,9 @@ import java.util.Locale
 
 
 class ItemAdapter(
-    private val itemList: MutableList<TemporaryItem>, private val onUpdateSummary: () -> Unit
+    private var itemList: List<TemporaryItem>,
+    private val onEditItem: (Int, TemporaryItem) -> Unit,
+    private val onDeleteItem: (Int) -> Unit
 ) : RecyclerView.Adapter<ItemAdapter.ViewHolder>() {
 
     inner class ViewHolder(val itemRowBinding: ItemRowBinding) :
@@ -80,15 +82,20 @@ class ItemAdapter(
         }
     }
 
+    fun updateData(newList: List<TemporaryItem>) {
+        itemList = newList
+        notifyDataSetChanged()
+    }
+
     private fun showDeleteConfirmationDialog(context: Context, position: Int) {
         val builder = AlertDialog.Builder(context)
         builder.setTitle("Confirm Deletion")
         builder.setMessage("Are you sure you want to delete this item?")
         builder.setPositiveButton("Yes") { _, _ ->
-            removeItem(position)
+            onDeleteItem(position)
         }
         builder.setNegativeButton("No") { dialog, _ ->
-            dialog.dismiss() // Dismiss the dialog if the user cancels
+            dialog.dismiss() 
         }
         builder.create().show()
     }
@@ -104,23 +111,6 @@ class ItemAdapter(
     }
 
     override fun getItemCount(): Int = itemList.size
-
-    fun removeItem(position: Int) {
-        if (position != RecyclerView.NO_POSITION) {
-            itemList.removeAt(position)
-            notifyItemRemoved(position)
-            notifyItemRangeChanged(position, itemList.size)
-            onUpdateSummary()
-        }
-    }
-
-    fun editItem(position: Int, updatedItem: TemporaryItem) {
-        if (position != RecyclerView.NO_POSITION) {
-            itemList[position] = updatedItem
-            notifyItemChanged(position)
-            onUpdateSummary()
-        }
-    }
 
     private var dialog: AlertDialog? = null
     private fun showEditDialog(position: Int, context: Context) {
@@ -179,7 +169,7 @@ class ItemAdapter(
 
                     if (name.isNotEmpty() && quantity > 0 && rate > 0) {
                         val updatedItem = TemporaryItem(name, quantity, rate, total)
-                        editItem(position, updatedItem)
+                        onEditItem(position, updatedItem)
                         dialog?.dismiss()
                     } else {
                         Toast.makeText(context, "Invalid input", Toast.LENGTH_SHORT).show()
@@ -188,19 +178,19 @@ class ItemAdapter(
                     Toast.makeText(context, "Enter Rate!", Toast.LENGTH_SHORT).show()
                     return@setOnEditorActionListener true
                 }
-                true // Consume the event
+                true 
             } else {
-                false // Let the system handle other actions
+                false 
             }
         }
 
         val titleTextView = TextView(context).apply {
-            text = "Edit Item" // Set the title text
-            textSize = 18f // Set the text size
-            setTextColor(Color.BLACK) // Set the text color to black
+            text = "Edit Item" 
+            textSize = 18f 
+            setTextColor(Color.BLACK) 
             setPadding(0, 30, 0, 10)
             typeface = ResourcesCompat.getFont(context, R.font.lato_bold)
-            gravity = Gravity.CENTER // Center-align the text
+            gravity = Gravity.CENTER 
         }
         dialog = AlertDialog.Builder(context).setView(dialogView.root).setCustomTitle(titleTextView)
             .setPositiveButton("Save") { _, _ ->
@@ -211,7 +201,7 @@ class ItemAdapter(
 
                 if (name.isNotEmpty() && quantity > 0 && rate > 0) {
                     val updatedItem = TemporaryItem(name, quantity, rate, total)
-                    editItem(position, updatedItem)
+                    onEditItem(position, updatedItem)
                 } else {
                     Toast.makeText(context, "Invalid input", Toast.LENGTH_SHORT).show()
                 }

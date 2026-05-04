@@ -14,6 +14,6 @@ interface InvoiceDiscountDao {
     @Query("DELETE FROM invoice_discount_table WHERE invoiceId = :invoiceId")
     suspend fun deleteByInvoiceId(invoiceId: Int)
 
-    @Query("SELECT * FROM invoice_discount_table WHERE invoiceId = :invoiceId")
+    @Query("SELECT * FROM invoice_discount_table WHERE invoiceId = :invoiceId ORDER BY orderIndex ASC")
     suspend fun getDiscountsForInvoice(invoiceId: Int): List<InvoiceDiscount>
 }

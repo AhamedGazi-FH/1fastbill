@@ -217,6 +217,7 @@
                                     android:id="@+id/quantityInput"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
+                                    android:selectAllOnFocus="true"
                                     android:inputType="numberDecimal" />
                             </com.google.android.material.textfield.TextInputLayout>
 
@@ -663,14 +664,28 @@
                                 android:src="@drawable/ic_edit"
                                 app:tint="?android:attr/textColorSecondary" />
 
-                            <TextView
+                            <LinearLayout
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="16dp"
                                 android:layout_weight="1"
-                                android:text="Change Backup Name"
-                                android:textColor="?android:attr/textColorPrimary"
-                                android:textSize="15sp" />
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Change Backup Name"
+                                    android:textColor="?android:attr/textColorPrimary"
+                                    android:textSize="15sp" />
+
+                                <TextView
+                                    android:id="@+id/tv_current_backup_name"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Default"
+                                    android:textColor="?android:attr/textColorSecondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
 
                             <ImageView
                                 android:layout_width="20dp"
@@ -716,6 +731,7 @@
                                 android:id="@+id/etTitle"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
+                                android:selectAllOnFocus="true"
                                 android:inputType="textCapWords" />
                         </com.google.android.material.textfield.TextInputLayout>
 
@@ -737,6 +753,7 @@
                                     android:id="@+id/et_percentage"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
+                                    android:selectAllOnFocus="true"
                                     android:inputType="numberDecimal" />
                             </com.google.android.material.textfield.TextInputLayout>
 
@@ -751,6 +768,7 @@
                                     android:id="@+id/et_price"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
+                                    android:selectAllOnFocus="true"
                                     android:inputType="numberDecimal" />
                             </com.google.android.material.textfield.TextInputLayout>
                         </LinearLayout>

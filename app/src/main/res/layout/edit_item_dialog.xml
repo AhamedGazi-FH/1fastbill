@@ -38,6 +38,7 @@
                 android:hint="@string/item_name"
                 android:imeOptions="actionNext"
                 android:inputType="number"
+                android:selectAllOnFocus="true"
                 android:paddingVertical="8dp"
                 android:textColor="@color/black" />
 
@@ -71,6 +72,7 @@
                         android:hint="@string/quantity"
                         android:imeOptions="actionNext"
                         android:inputType="number"
+                        android:selectAllOnFocus="true"
                         android:paddingVertical="8dp"
                         android:textColor="@color/black" />
                 </LinearLayout>
@@ -98,6 +100,7 @@
                         android:hint="@string/rate"
                         android:imeOptions="actionDone"
                         android:inputType="numberDecimal"
+                        android:selectAllOnFocus="true"
                         android:paddingVertical="8dp"
                         android:textColor="@color/black" />
                 </LinearLayout>

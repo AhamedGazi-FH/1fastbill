@@ -1,6 +1,5 @@
 package com.fastbill.ahamed.adapter
 
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -66,7 +65,7 @@ class ItemInvoiceAdapter(
         RecyclerView.ViewHolder(binding.root) {
         
         init {
-            binding.relMain.setOnClickListener {
+            binding.swipeView.setOnClickListener {
                 val position = adapterPosition
                 if (position != RecyclerView.NO_POSITION) {
                     onPerformAction(position, DiscountAction.ACTIVATE)
@@ -77,7 +76,13 @@ class ItemInvoiceAdapter(
         fun bind(item: HistoryListItem.BillData) {
             val bill = item.invoice
             binding.tvName.text = bill.name
-            binding.tvPrice.text = "₹${bill.total}"
+
+            // Create the Indian number formatter
+            val indianFormat = NumberFormat.getNumberInstance(Locale("en", "IN"))
+            // Round the total to the nearest whole number to eliminate decimals
+            val roundedTotal = Math.round(bill.total) 
+
+            binding.tvPrice.text = "₹ ${indianFormat.format(roundedTotal)}"
             
             binding.relDate.visibility = View.GONE
 

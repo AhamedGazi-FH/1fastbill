@@ -10,15 +10,18 @@
     app:cardBackgroundColor="@color/white"
     app:cardCornerRadius="12dp"
     app:cardElevation="2dp"
-    app:strokeWidth="0dp">
+    app:strokeWidth="0dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?android:attr/selectableItemBackground">
 
     <!-- SwipeActionView handles swiping -->
     <me.thanel.swipeactionview.SwipeActionView
         android:id="@+id/swipe_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:clickable="false"
-        android:focusable="false">
+        android:clickable="true"
+        android:focusable="true">
 
         <!-- Background icons for swipe actions -->
         <ImageView
@@ -41,16 +44,15 @@
             android:focusable="false"
             app:tint="#D32F2F" />
 
-        <!-- Click attributes moved here to bypass SwipeActionView interception -->
+        <!-- rel_main click attributes removed to let SwipeActionView handle taps -->
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/rel_main"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@color/white"
             android:padding="16dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:foreground="?android:attr/selectableItemBackground">
+            android:clickable="false"
+            android:focusable="false">
 
             <TextView
                 android:id="@+id/tv_name"
@@ -63,6 +65,8 @@
                 android:text="Customer Name"
                 android:textColor="?attr/colorOnSurface"
                 android:textSize="16sp"
+                android:clickable="false"
+                android:focusable="false"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@+id/tv_price"
                 app:layout_constraintStart_toStartOf="parent"
@@ -77,6 +81,8 @@
                 android:text="₹ 0.00"
                 android:textColor="?attr/colorOnSurface"
                 android:textSize="18sp"
+                android:clickable="false"
+                android:focusable="false"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@+id/iv_chevron"
                 app:layout_constraintTop_toTopOf="parent" />
@@ -86,6 +92,8 @@
                 android:layout_width="16dp"
                 android:layout_height="16dp"
                 android:src="@drawable/ic_chevron_right"
+                android:clickable="false"
+                android:focusable="false"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
@@ -96,6 +104,8 @@
                 android:layout_width="0dp"
                 android:layout_height="0dp"
                 android:visibility="gone"
+                android:clickable="false"
+                android:focusable="false"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
@@ -104,6 +114,8 @@
                 android:layout_width="0dp"
                 android:layout_height="0dp"
                 android:visibility="gone"
+                android:clickable="false"
+                android:focusable="false"
                 tools:ignore="MissingConstraints" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>

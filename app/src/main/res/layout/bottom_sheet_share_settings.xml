@@ -96,6 +96,17 @@
         android:layout_marginTop="8dp"
         app:singleSelection="true"
         app:selectionRequired="true" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnShareWhatsapp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Quick Share Now"
+        android:textAllCaps="false"
+        app:cornerRadius="8dp"
+        app:icon="@drawable/ic_share"
+        app:iconGravity="textStart" />
     
     <!-- Hidden RadioGroup to keep logic compatibility (IDs preserved) -->
     <RadioGroup

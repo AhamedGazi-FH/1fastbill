@@ -12,5 +12,6 @@ data class InvoiceDiscount(
     val percentage: Int,
     val price: Double,
     val isPlus: Boolean,
-    val isActive: Boolean
+    val isActive: Boolean,
+    val orderIndex: Int = 0
 )

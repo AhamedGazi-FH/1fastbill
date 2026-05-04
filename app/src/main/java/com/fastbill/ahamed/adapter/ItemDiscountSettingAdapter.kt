@@ -1,22 +1,15 @@
 package com.fastbill.ahamed.adapter
 
+import android.graphics.Color
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
-import android.widget.AdapterView
-import android.widget.AdapterView.OnItemLongClickListener
 import androidx.recyclerview.widget.RecyclerView
-import com.github.angads25.toggle.interfaces.OnToggledListener
-import com.github.angads25.toggle.model.ToggleableView
-import com.github.angads25.toggle.widget.LabeledSwitch
 import com.fastbill.ahamed.database.Discount
 import com.fastbill.ahamed.databinding.RawDiscountItemBinding
 import com.fastbill.ahamed.model.DiscountAction
-import me.thanel.swipeactionview.SwipeActionView
-import me.thanel.swipeactionview.SwipeDirection
-import me.thanel.swipeactionview.SwipeGestureListener
-import java.util.Locale
-
+import com.github.angads25.toggle.interfaces.OnToggledListener
+import com.github.angads25.toggle.model.ToggleableView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class ItemDiscountSettingAdapter(
     private val discountList: MutableList<Discount>,
@@ -28,26 +21,39 @@ class ItemDiscountSettingAdapter(
         fun onBind(item: Discount) {
             itemRowBinding.tvTitle.text = item.title
             itemRowBinding.isActive.isOn = item.isActive
+            
+            // Format value display (Task 3)
+            val amountStr = if (item.percentage > 0) "${item.percentage}%" else "₹${item.price}"
+            if (item.isPlus) {
+                itemRowBinding.tvValue.text = "+ $amountStr"
+                itemRowBinding.tvValue.setTextColor(Color.parseColor("#388E3C"))
+            } else {
+                itemRowBinding.tvValue.text = "- $amountStr"
+                itemRowBinding.tvValue.setTextColor(Color.parseColor("#D32F2F"))
+            }
+
             itemRowBinding.isActive.setOnToggledListener(object : OnToggledListener {
                 override fun onSwitched(toggleableView: ToggleableView?, isOn: Boolean) {
                     onPerformAction(adapterPosition, DiscountAction.ACTIVATE)
                 }
             })
+
+            // Destructive Long-Press Fix (Task 2)
             itemRowBinding.swipeView.setOnLongClickListener {
-                onPerformAction(adapterPosition, DiscountAction.DELETE)
+                val context = it.context
+                MaterialAlertDialogBuilder(context)
+                    .setTitle("Manage Discount")
+                    .setMessage("What would you like to do with '${item.title}'?")
+                    .setPositiveButton("Edit") { _, _ ->
+                        onPerformAction(adapterPosition, DiscountAction.EDIT)
+                    }
+                    .setNegativeButton("Delete") { _, _ ->
+                        onPerformAction(adapterPosition, DiscountAction.DELETE)
+                    }
+                    .setNeutralButton("Cancel", null)
+                    .show()
                 true
             }
-//            itemRowBinding.swipeView.swipeGestureListener = object : SwipeGestureListener {
-//                override fun onSwipedLeft(swipeActionView: SwipeActionView): Boolean {
-//                    onPerformAction(adapterPosition, DiscountAction.DELETE)
-//                    return true
-//                }
-//
-//                override fun onSwipedRight(swipeActionView: SwipeActionView): Boolean {
-//                    onPerformAction(adapterPosition, DiscountAction.EDIT)
-//                    return true
-//                }
-//            }
         }
     }
 
@@ -62,5 +68,4 @@ class ItemDiscountSettingAdapter(
     }
 
     override fun getItemCount(): Int = discountList.size
-
 }
