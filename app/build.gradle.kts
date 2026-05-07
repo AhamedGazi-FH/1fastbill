@@ -14,8 +14,8 @@ android {
         applicationId = "com.fastbill.ahamed"
         minSdk = 24
         targetSdk = 35
-        versionCode = 4
-        versionName = "1.0.3"
+        versionCode = 5
+        versionName = "1.0.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -29,7 +29,8 @@ android {
             )
         }
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -62,7 +63,7 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     implementation(libs.ssp.android)
     implementation(libs.sdp.android)
-    implementation(libs.swipeactionview)
+    implementation(libs.swipeactionview) // <--- WE NEED THIS BACK!
 
     implementation(libs.androidx.room.runtime)
     ksp(libs.androidx.room.compiler)
@@ -70,7 +71,7 @@ dependencies {
 
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.coroutines.core)
-    implementation(libs.toggle)
+    implementation(libs.toggle) // <--- AND WE NEED THIS BACK!
 
     implementation(libs.lottie)
     implementation(libs.androidx.work.runtime.ktx)

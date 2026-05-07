@@ -1,8 +1,8 @@
 package com.fastbill.ahamed.database
 
 import androidx.room.Entity
-import androidx.room.PrimaryKey
 import androidx.room.Ignore
+import androidx.room.PrimaryKey
 
 @Entity(tableName = "discount_table")
 data class Discount(

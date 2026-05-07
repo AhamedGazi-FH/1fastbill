@@ -1,9 +1,9 @@
 package com.fastbill.ahamed.database
 
 import android.content.Context
+import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
-import android.util.Log
 
 class SyncManager(private val context: Context) {
 

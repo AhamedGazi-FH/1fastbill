@@ -10,8 +10,6 @@ import com.fastbill.ahamed.model.DiscountAction
 import me.thanel.swipeactionview.SwipeActionView
 import me.thanel.swipeactionview.SwipeDirection
 import me.thanel.swipeactionview.SwipeGestureListener
-import java.util.Collections
-import java.util.Locale
 import kotlin.math.roundToInt
 
 

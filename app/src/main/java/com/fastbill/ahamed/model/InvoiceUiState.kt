@@ -12,5 +12,14 @@ data class InvoiceUiState(
     val grandTotal: Double = 0.0,
     val customerName: String = "",
     val invoiceDate: String = "",
-    val isSaved: Boolean = false
+    val isSaved: Boolean = false,
+    val themeColor: String = "#6750A4",
+    val isNumberOn: Boolean = false,
+    val defaultShareNumber: String = "",
+    val shareNumber1: String = "",
+    val shareNumber2: String = "",
+    val shareNumber3: String = "",
+    val shareApp: String = "other",
+    val isCaptionOn: Boolean = true,
+    val captionTemplate: String = ""
 )

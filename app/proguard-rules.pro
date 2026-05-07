@@ -1,3 +1,7 @@
+# 1. Protect all Data Models (Keeps variable names exact for Firebase Sync & Backup)
+-keep class com.fastbill.ahamed.model.** { *; }
+-keep class com.fastbill.ahamed.database.** { *; }
+
 # Add project specific ProGuard rules here.
 # You can control the set of applied configuration files using the
 # proguardFiles setting in build.gradle.

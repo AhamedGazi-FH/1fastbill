@@ -6,7 +6,7 @@ import android.net.Uri
 import android.widget.Toast
 import com.fastbill.ahamed.model.SharedBillPackage
 import com.google.firebase.firestore.FirebaseFirestore
-import java.util.*
+import java.util.UUID
 
 class ShareManager(private val context: Context) {
     private val db = FirebaseFirestore.getInstance()

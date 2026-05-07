@@ -21,18 +21,45 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,25 +79,25 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
-import androidx.work.ExistingPeriodicWorkPolicy
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.fastbill.ahamed.adapter.ItemAdapter
 import com.fastbill.ahamed.adapter.ItemDiscountAdapter
 import com.fastbill.ahamed.database.Customer
 import com.fastbill.ahamed.database.InvoiceDatabase
 import com.fastbill.ahamed.database.InvoiceRepository
+import com.fastbill.ahamed.database.PeriodicBackupWorker
 import com.fastbill.ahamed.database.PreferencesRepository
 import com.fastbill.ahamed.database.Rate
-import com.fastbill.ahamed.database.SyncManager
-import com.fastbill.ahamed.database.PeriodicBackupWorker
 import com.fastbill.ahamed.database.ShareManager
+import com.fastbill.ahamed.database.SyncManager
 import com.fastbill.ahamed.databinding.ActivityMainBinding
 import com.fastbill.ahamed.databinding.EditDiscountDialogBinding
 import com.fastbill.ahamed.model.DiscountAction
 import com.fastbill.ahamed.model.TemporaryItem
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -89,7 +116,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var discountAdapter: ItemDiscountAdapter
     lateinit var binding: ActivityMainBinding
     private lateinit var sharedPreferences: SharedPreferences
-    private var selectedColorCode = "#6750A4"
 
     private val database by lazy { InvoiceDatabase.getDatabase(this) }
     private val customerDao by lazy { database.customerDao() }
@@ -203,6 +229,15 @@ class MainActivity : AppCompatActivity() {
                     if (state.isSaved) {
                         Toast.makeText(this@MainActivity, "Invoice Saved Successfully", Toast.LENGTH_SHORT).show()
                         viewModel.resetSaveState()
+                    }
+
+                    // Observe Real-time Colors
+                    try {
+                        val parsedColor = Color.parseColor(state.themeColor)
+                        window.statusBarColor = parsedColor
+                        binding.llBottomFinal.setBackgroundColor(parsedColor)
+                    } catch (e: Exception) {
+                        Log.e("MainActivity", "Invalid theme color: ${state.themeColor}")
                     }
                 }
             }
@@ -323,8 +358,17 @@ class MainActivity : AppCompatActivity() {
             val bitmap = createBitmapFromView(binding.receiptRootContainer)
             val savedUri = saveBitmapToCache(bitmap)
 
-            val isNumberOn = sharedPreferences.getBoolean("share_number_on", false)
-            val phone = if (isNumberOn) sharedPreferences.getString("default_share_number", null) else null
+            val state = viewModel.uiState.value
+            var phone: String? = null
+            if (state.isNumberOn) {
+                phone = state.defaultShareNumber.ifEmpty {
+                    state.shareNumber1.ifEmpty {
+                        state.shareNumber2.ifEmpty {
+                            state.shareNumber3.ifEmpty { null }
+                        }
+                    }
+                }
+            }
 
             shareImage(savedUri, phone)
 
@@ -357,8 +401,10 @@ class MainActivity : AppCompatActivity() {
 
         val composeView = ComposeView(this).apply {
             setContent {
-                MaterialTheme(colorScheme = lightColorScheme(primary = androidx.compose.ui.graphics.Color(0xFF6750A4))) {
-                    val uiState by viewModel.uiState.collectAsState()
+                val uiState by viewModel.uiState.collectAsState()
+                val themeColor = try { androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(uiState.themeColor)) } catch (e: Exception) { androidx.compose.ui.graphics.Color(0xFF6750A4) }
+
+                MaterialTheme(colorScheme = lightColorScheme(primary = themeColor)) {
                     var discounts by remember { mutableStateOf<List<com.fastbill.ahamed.database.Discount>>(emptyList()) }
 
                     LaunchedEffect(Unit) {
@@ -391,7 +437,7 @@ class MainActivity : AppCompatActivity() {
                         Text("Invoice Setup", fontWeight = FontWeight.Black, fontSize = 22.sp, color = androidx.compose.ui.graphics.Color(0xFF111827))
                         Text("Manage templates and branding for this bill.", fontSize = 14.sp, color = androidx.compose.ui.graphics.Color(0xFF6B7280), modifier = Modifier.padding(bottom = 24.dp))
 
-                        // --- 1. QUICK ADD TEMPLATES (Medium Priority - Placed High) ---
+                        // --- 1. QUICK ADD TEMPLATES
                         val negativeDiscounts = discounts.filter { !it.isPlus }
                         val positiveDiscounts = discounts.filter { it.isPlus }
 
@@ -444,12 +490,12 @@ class MainActivity : AppCompatActivity() {
                         HorizontalDivider(color = androidx.compose.ui.graphics.Color(0xFFF3F4F6), thickness = 1.dp)
                         Spacer(modifier = Modifier.height(24.dp))
 
-                        // --- 2. THEME COLOR (Low Priority - Placed at Bottom) ---
+                        // --- 2. THEME COLOR
                         Text("Brand Color", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = androidx.compose.ui.graphics.Color(0xFF9CA3AF), letterSpacing = 1.sp, modifier = Modifier.padding(bottom = 12.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                             colorList.forEach { colorStr ->
                                 val parsedColor = try { android.graphics.Color.parseColor(colorStr) } catch(e: Exception) { android.graphics.Color.GRAY }
-                                val isSelected = colorStr == selectedColorCode
+                                val isSelected = colorStr == uiState.themeColor
                                 val targetSize by animateDpAsState(if (isSelected) 44.dp else 36.dp, label = "color_size")
 
                                 Box(
@@ -457,9 +503,8 @@ class MainActivity : AppCompatActivity() {
                                         .size(44.dp)
                                         .clip(CircleShape)
                                         .clickable {
-                                            selectedColorCode = colorStr
                                             sharedPreferences.edit().putString("selected_color_code", colorStr).apply()
-                                            binding.llBottomFinal.setBackgroundColor(parsedColor)
+                                            viewModel.refreshPreferences()
                                         },
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -505,23 +550,25 @@ class MainActivity : AppCompatActivity() {
 
         val composeView = ComposeView(this).apply {
             setContent {
-                MaterialTheme(colorScheme = lightColorScheme(primary = androidx.compose.ui.graphics.Color(0xFF6750A4))) {
+                val uiState by viewModel.uiState.collectAsState()
+                val themeColor = try { androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(uiState.themeColor)) } catch (e: Exception) { androidx.compose.ui.graphics.Color(0xFF6750A4) }
+
+                MaterialTheme(colorScheme = lightColorScheme(primary = themeColor)) {
                     var shareApp by remember { mutableStateOf(sharedPreferences.getString("share_app", "other") ?: "other") }
                     var captionOn by remember { mutableStateOf(sharedPreferences.getBoolean("share_caption", true)) }
                     var numberOn by remember { mutableStateOf(sharedPreferences.getBoolean("share_number_on", false)) }
 
                     var defaultNumber by remember {
-                        val n1 = sharedPreferences.getString("share_number_1", "")?.takeIf { it.isNotEmpty() }
-                        val n2 = sharedPreferences.getString("share_number_2", "")?.takeIf { it.isNotEmpty() }
-                        val n3 = sharedPreferences.getString("share_number_3", "")?.takeIf { it.isNotEmpty() }
-                        val firstAvailable = n1 ?: n2 ?: n3 ?: ""
+                        val firstAvailable = uiState.shareNumber1.takeIf { it.isNotEmpty() }
+                            ?: uiState.shareNumber2.takeIf { it.isNotEmpty() }
+                            ?: uiState.shareNumber3.takeIf { it.isNotEmpty() } ?: ""
                         mutableStateOf(sharedPreferences.getString("default_share_number", firstAvailable) ?: firstAvailable)
                     }
 
                     val numbers = listOfNotNull(
-                        sharedPreferences.getString("share_number_1", "")?.takeIf { it.isNotEmpty() },
-                        sharedPreferences.getString("share_number_2", "")?.takeIf { it.isNotEmpty() },
-                        sharedPreferences.getString("share_number_3", "")?.takeIf { it.isNotEmpty() }
+                        uiState.shareNumber1.takeIf { it.isNotEmpty() },
+                        uiState.shareNumber2.takeIf { it.isNotEmpty() },
+                        uiState.shareNumber3.takeIf { it.isNotEmpty() }
                     )
 
                     Column(modifier = Modifier.fillMaxWidth().background(androidx.compose.ui.graphics.Color.White).padding(horizontal = 24.dp, vertical = 16.dp)) {
@@ -539,7 +586,7 @@ class MainActivity : AppCompatActivity() {
 
                         Text("Share Document", fontWeight = FontWeight.Black, fontSize = 22.sp, color = androidx.compose.ui.graphics.Color(0xFF111827), modifier = Modifier.padding(bottom = 20.dp))
 
-                        // App Selector segmented buttons inside a subtle container
+                        // App Selector
                         Surface(
                             color = androidx.compose.ui.graphics.Color(0xFFF3F4F6),
                             shape = RoundedCornerShape(12.dp),
@@ -555,6 +602,7 @@ class MainActivity : AppCompatActivity() {
                                         modifier = Modifier.weight(1f).clickable {
                                             shareApp = code
                                             sharedPreferences.edit().putString("share_app", code).apply()
+                                            viewModel.refreshPreferences()
                                         }
                                     ) {
                                         Text(label, color = if (isSel) androidx.compose.ui.graphics.Color(0xFF111827) else androidx.compose.ui.graphics.Color(0xFF6B7280), fontSize = 14.sp, fontWeight = if(isSel) FontWeight.Bold else FontWeight.Medium, modifier = Modifier.padding(vertical = 10.dp), textAlign = TextAlign.Center)
@@ -578,7 +626,11 @@ class MainActivity : AppCompatActivity() {
                                         Text("Auto-Caption", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = androidx.compose.ui.graphics.Color(0xFF111827))
                                         Text("Include details text in message", fontSize = 13.sp, color = androidx.compose.ui.graphics.Color(0xFF6B7280))
                                     }
-                                    Switch(checked = captionOn, onCheckedChange = { captionOn = it; sharedPreferences.edit().putBoolean("share_caption", it).apply() }, colors = SwitchDefaults.colors(checkedTrackColor = MaterialTheme.colorScheme.primary))
+                                    Switch(checked = captionOn, onCheckedChange = {
+                                        captionOn = it;
+                                        sharedPreferences.edit().putBoolean("share_caption", it).apply()
+                                        viewModel.refreshPreferences()
+                                    }, colors = SwitchDefaults.colors(checkedTrackColor = MaterialTheme.colorScheme.primary))
                                 }
 
                                 HorizontalDivider(color = androidx.compose.ui.graphics.Color(0xFFF3F4F6))
@@ -589,7 +641,11 @@ class MainActivity : AppCompatActivity() {
                                         Text("Direct Send", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = androidx.compose.ui.graphics.Color(0xFF111827))
                                         Text("Skip contact selection screen", fontSize = 13.sp, color = androidx.compose.ui.graphics.Color(0xFF6B7280))
                                     }
-                                    Switch(checked = numberOn, onCheckedChange = { numberOn = it; sharedPreferences.edit().putBoolean("share_number_on", it).apply() }, colors = SwitchDefaults.colors(checkedTrackColor = MaterialTheme.colorScheme.primary))
+                                    Switch(checked = numberOn, onCheckedChange = {
+                                        numberOn = it;
+                                        sharedPreferences.edit().putBoolean("share_number_on", it).apply()
+                                        viewModel.refreshPreferences()
+                                    }, colors = SwitchDefaults.colors(checkedTrackColor = MaterialTheme.colorScheme.primary))
                                 }
                             }
                         }
@@ -603,7 +659,11 @@ class MainActivity : AppCompatActivity() {
                                             color = if (defaultNumber == num) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else androidx.compose.ui.graphics.Color(0xFFF9FAFB),
                                             shape = RoundedCornerShape(12.dp),
                                             border = BorderStroke(1.dp, if (defaultNumber == num) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color(0xFFE5E7EB)),
-                                            modifier = Modifier.clickable { defaultNumber = num; sharedPreferences.edit().putString("default_share_number", num).apply() }
+                                            modifier = Modifier.clickable {
+                                                defaultNumber = num;
+                                                sharedPreferences.edit().putString("default_share_number", num).apply()
+                                                viewModel.refreshPreferences()
+                                            }
                                         ) {
                                             Text(num, modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp), fontWeight = FontWeight.Bold, color = if (defaultNumber == num) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color(0xFF374151))
                                         }
@@ -614,7 +674,7 @@ class MainActivity : AppCompatActivity() {
 
                         Spacer(modifier = Modifier.height(32.dp))
 
-                        // Primary Action (Massive)
+                        // Primary Action
                         Button(
                             onClick = {
                                 if (viewModel.uiState.value.customerName.isNotEmpty() && viewModel.uiState.value.items.isNotEmpty()) {
@@ -628,7 +688,16 @@ class MainActivity : AppCompatActivity() {
                                     lifecycleScope.launch {
                                         val bitmap = createBitmapFromView(binding.receiptRootContainer)
                                         val savedUri = saveBitmapToCache(bitmap)
-                                        shareImage(savedUri, if (numberOn) defaultNumber.takeIf { it.isNotEmpty() } else null)
+
+                                        var phone: String? = null
+                                        if (numberOn) {
+                                            phone = defaultNumber.takeIf { it.isNotEmpty() }
+                                                ?: uiState.shareNumber1.takeIf { it.isNotEmpty() }
+                                                        ?: uiState.shareNumber2.takeIf { it.isNotEmpty() }
+                                                        ?: uiState.shareNumber3.takeIf { it.isNotEmpty() }
+                                        }
+
+                                        shareImage(savedUri, phone)
                                         viewModel.saveInvoice()
 
                                         withContext(Dispatchers.Main) {
@@ -703,16 +772,16 @@ class MainActivity : AppCompatActivity() {
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
 
-        val prefs = getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
-        if (prefs.getBoolean("share_caption", true)) {
-            val template = prefs.getString("share_caption_template", "*Total {qty} Pcs {total}*") ?: "*Total {qty} Pcs {total}*"
-            val caption = template.replace("{qty}", viewModel.uiState.value.totalQuantity.toString())
+        val state = viewModel.uiState.value
+        if (state.isCaptionOn) {
+            val template = state.captionTemplate.ifEmpty { "*Total {qty} Pcs {total}*" }
+            val caption = template.replace("{qty}", state.totalQuantity.toString())
                 .replace("{total}", binding.tvFinalTotal.text.toString().trim())
-                .replace("{name}", viewModel.uiState.value.customerName)
+                .replace("{name}", state.customerName)
             intent.putExtra(Intent.EXTRA_TEXT, caption)
         }
 
-        val shareApp = prefs.getString("share_app", "other")
+        val shareApp = sharedPreferences.getString("share_app", "other")
         if (shareApp == "wa") intent.setPackage("com.whatsapp")
         else if (shareApp == "wa_biz") intent.setPackage("com.whatsapp.w4b")
 
@@ -818,28 +887,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-
-        val prefs = getSharedPreferences("AppPreferences", MODE_PRIVATE)
-        val isSettingsUpdated = prefs.getBoolean("settings_just_updated", false)
-
-        if (isSettingsUpdated) {
-            prefs.edit().putBoolean("settings_just_updated", false).apply()
-
-            try {
-                if (::adapter.isInitialized) {
-                    adapter.notifyDataSetChanged()
-                }
-            } catch (e: Exception) { e.printStackTrace() }
-
-            try {
-                val colorStr = prefs.getString("selected_color_code", "#6750A4") ?: "#6750A4"
-                val parsedColor = android.graphics.Color.parseColor(colorStr)
-                window.statusBarColor = parsedColor
-            } catch (e: Exception) { e.printStackTrace() }
-        } else {
-            selectedColorCode = prefs.getString("selected_color_code", "#6750A4") ?: "#6750A4"
-            binding.llBottomFinal.setBackgroundColor(Color.parseColor(selectedColorCode))
-        }
+        viewModel.refreshPreferences()
     }
 
     private fun showEditDialog(position: Int) {
