@@ -34,6 +34,9 @@ class InvoiceViewModel(
         val sn1 = preferencesRepository.getShareNumber(1)
         val sn2 = preferencesRepository.getShareNumber(2)
         val sn3 = preferencesRepository.getShareNumber(3)
+        // Added Caption Preferences
+        val isCapOn = preferencesRepository.isShareCaptionOn()
+        val capTemp = preferencesRepository.getShareCaptionTemplate()
 
         _uiState.update { state ->
             state.copy(
@@ -42,7 +45,9 @@ class InvoiceViewModel(
                 defaultShareNumber = defaultNumber,
                 shareNumber1 = sn1,
                 shareNumber2 = sn2,
-                shareNumber3 = sn3
+                shareNumber3 = sn3,
+                isCaptionOn = isCapOn,
+                captionTemplate = capTemp
             )
         }
     }

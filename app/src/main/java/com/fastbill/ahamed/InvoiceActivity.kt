@@ -497,12 +497,6 @@ class InvoiceActivity : ComponentActivity() {
                             overflow = TextOverflow.Ellipsis,
                             color = Color.Black
                         )
-                        Text(
-                            text = "Tap to edit or share",
-                            fontSize = 12.sp,
-                            color = Color.Gray,
-                            modifier = Modifier.padding(top = 2.dp)
-                        )
                     }
                     Text(
                         text = "₹ ${indianFormat.format(invoice.total.roundToInt())}",

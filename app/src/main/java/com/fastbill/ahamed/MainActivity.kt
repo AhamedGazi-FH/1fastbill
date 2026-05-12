@@ -1,17 +1,19 @@
 package com.fastbill.ahamed
 
-import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Rect
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
 import android.view.View
+import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
 import android.widget.ArrayAdapter
 import android.widget.EditText
 import android.widget.Toast
@@ -68,6 +70,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.FileProvider
+import androidx.core.content.edit
+import androidx.core.graphics.toColorInt
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -75,6 +80,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.lifecycle.setViewTreeViewModelStoreOwner
+import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -108,6 +116,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
+import kotlin.coroutines.resume
 
 class MainActivity : AppCompatActivity() {
 
@@ -206,10 +215,10 @@ class MainActivity : AppCompatActivity() {
                     discountAdapter.updateData(state.discounts, state.subTotal)
 
                     val indianFormat = java.text.NumberFormat.getNumberInstance(Locale("en", "IN"))
-                    binding.sumQty.text = "${state.totalQuantity} Pcs"
-                    binding.tvSum.text = "₹ ${indianFormat.format(state.subTotal.roundToInt())}"
-                    binding.tvFinalTotal.text = "₹ ${indianFormat.format(state.grandTotal.roundToInt())}"
-                    binding.indexTextView.text = "${state.items.size + 1}."
+                    binding.sumQty.text = getString(R.string.qty_pcs, state.totalQuantity)
+                    binding.tvSum.text = getString(R.string.currency_format, indianFormat.format(state.subTotal.roundToInt()))
+                    binding.tvFinalTotal.text = getString(R.string.currency_format, indianFormat.format(state.grandTotal.roundToInt()))
+                    binding.indexTextView.text = getString(R.string.index_format, state.items.size + 1)
 
                     binding.loading.loading.visibility = if (state.isLoading) View.VISIBLE else View.GONE
                     binding.tvName.text = state.customerName
@@ -233,7 +242,7 @@ class MainActivity : AppCompatActivity() {
 
                     // Observe Real-time Colors
                     try {
-                        val parsedColor = Color.parseColor(state.themeColor)
+                        val parsedColor = state.themeColor.toColorInt()
                         window.statusBarColor = parsedColor
                         binding.llBottomFinal.setBackgroundColor(parsedColor)
                     } catch (e: Exception) {
@@ -351,14 +360,14 @@ class MainActivity : AppCompatActivity() {
         binding.tvPrintDate.text = binding.tvDate.text
 
         binding.loading.loading.visibility = View.VISIBLE
-        binding.relUser.visibility = View.VISIBLE
         binding.btnQuickSetup.visibility = View.GONE
 
         lifecycleScope.launch {
-            val bitmap = createBitmapFromView(binding.receiptRootContainer)
+            val state = viewModel.uiState.value
+            // RENDER OFF-SCREEN
+            val bitmap = generateOffScreenInvoiceBitmap(state, binding.tvDate.text.toString())
             val savedUri = saveBitmapToCache(bitmap)
 
-            val state = viewModel.uiState.value
             var phone: String? = null
             if (state.isNumberOn) {
                 phone = state.defaultShareNumber.ifEmpty {
@@ -371,10 +380,9 @@ class MainActivity : AppCompatActivity() {
             }
 
             shareImage(savedUri, phone)
-
             viewModel.saveInvoice()
+            
             withContext(Dispatchers.Main) {
-                binding.relUser.visibility = View.GONE
                 binding.loading.loading.visibility = View.GONE
                 binding.btnQuickSetup.visibility = View.VISIBLE
             }
@@ -392,9 +400,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // ======================================================================
-    // 👑 EXPERT SAAS UI - QUICK SETUP
-    // ======================================================================
     @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
     private fun showQuickSetupBottomSheet() {
         val dialog = BottomSheetDialog(this, R.style.Theme_Design_Light_BottomSheetDialog)
@@ -402,7 +407,7 @@ class MainActivity : AppCompatActivity() {
         val composeView = ComposeView(this).apply {
             setContent {
                 val uiState by viewModel.uiState.collectAsState()
-                val themeColor = try { androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(uiState.themeColor)) } catch (e: Exception) { androidx.compose.ui.graphics.Color(0xFF6750A4) }
+                val themeColor = try { androidx.compose.ui.graphics.Color(uiState.themeColor.toColorInt()) } catch (_: Exception) { androidx.compose.ui.graphics.Color(0xFF6750A4) }
 
                 MaterialTheme(colorScheme = lightColorScheme(primary = themeColor)) {
                     var discounts by remember { mutableStateOf<List<com.fastbill.ahamed.database.Discount>>(emptyList()) }
@@ -423,7 +428,6 @@ class MainActivity : AppCompatActivity() {
                             .background(androidx.compose.ui.graphics.Color.White)
                             .padding(horizontal = 24.dp, vertical = 16.dp)
                     ) {
-                        // Drag Handle
                         Box(
                             modifier = Modifier
                                 .width(40.dp)
@@ -437,7 +441,6 @@ class MainActivity : AppCompatActivity() {
                         Text("Invoice Setup", fontWeight = FontWeight.Black, fontSize = 22.sp, color = androidx.compose.ui.graphics.Color(0xFF111827))
                         Text("Manage templates and branding for this bill.", fontSize = 14.sp, color = androidx.compose.ui.graphics.Color(0xFF6B7280), modifier = Modifier.padding(bottom = 24.dp))
 
-                        // --- 1. QUICK ADD TEMPLATES
                         val negativeDiscounts = discounts.filter { !it.isPlus }
                         val positiveDiscounts = discounts.filter { it.isPlus }
 
@@ -490,11 +493,10 @@ class MainActivity : AppCompatActivity() {
                         HorizontalDivider(color = androidx.compose.ui.graphics.Color(0xFFF3F4F6), thickness = 1.dp)
                         Spacer(modifier = Modifier.height(24.dp))
 
-                        // --- 2. THEME COLOR
                         Text("Brand Color", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = androidx.compose.ui.graphics.Color(0xFF9CA3AF), letterSpacing = 1.sp, modifier = Modifier.padding(bottom = 12.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                             colorList.forEach { colorStr ->
-                                val parsedColor = try { android.graphics.Color.parseColor(colorStr) } catch(e: Exception) { android.graphics.Color.GRAY }
+                                val parsedColor = try { colorStr.toColorInt() } catch(_: Exception) { Color.GRAY }
                                 val isSelected = colorStr == uiState.themeColor
                                 val targetSize by animateDpAsState(if (isSelected) 44.dp else 36.dp, label = "color_size")
 
@@ -503,7 +505,7 @@ class MainActivity : AppCompatActivity() {
                                         .size(44.dp)
                                         .clip(CircleShape)
                                         .clickable {
-                                            sharedPreferences.edit().putString("selected_color_code", colorStr).apply()
+                                            sharedPreferences.edit { putString("selected_color_code", colorStr) }
                                             viewModel.refreshPreferences()
                                         },
                                     contentAlignment = Alignment.Center
@@ -523,7 +525,6 @@ class MainActivity : AppCompatActivity() {
 
                         Spacer(modifier = Modifier.height(32.dp))
 
-                        // Done Button
                         Button(
                             onClick = { dialog.dismiss() },
                             modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -541,9 +542,6 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    // ======================================================================
-    // 👑 EXPERT SAAS UI - QUICK SHARE
-    // ======================================================================
     @OptIn(ExperimentalMaterial3Api::class)
     private fun showQuickShareSettings() {
         val dialog = BottomSheetDialog(this, R.style.Theme_Design_Light_BottomSheetDialog)
@@ -551,7 +549,7 @@ class MainActivity : AppCompatActivity() {
         val composeView = ComposeView(this).apply {
             setContent {
                 val uiState by viewModel.uiState.collectAsState()
-                val themeColor = try { androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(uiState.themeColor)) } catch (e: Exception) { androidx.compose.ui.graphics.Color(0xFF6750A4) }
+                val themeColor = try { androidx.compose.ui.graphics.Color(uiState.themeColor.toColorInt()) } catch (_: Exception) { androidx.compose.ui.graphics.Color(0xFF6750A4) }
 
                 MaterialTheme(colorScheme = lightColorScheme(primary = themeColor)) {
                     var shareApp by remember { mutableStateOf(sharedPreferences.getString("share_app", "other") ?: "other") }
@@ -573,7 +571,6 @@ class MainActivity : AppCompatActivity() {
 
                     Column(modifier = Modifier.fillMaxWidth().background(androidx.compose.ui.graphics.Color.White).padding(horizontal = 24.dp, vertical = 16.dp)) {
 
-                        // Drag Handle
                         Box(
                             modifier = Modifier
                                 .width(40.dp)
@@ -586,7 +583,6 @@ class MainActivity : AppCompatActivity() {
 
                         Text("Share Document", fontWeight = FontWeight.Black, fontSize = 22.sp, color = androidx.compose.ui.graphics.Color(0xFF111827), modifier = Modifier.padding(bottom = 20.dp))
 
-                        // App Selector
                         Surface(
                             color = androidx.compose.ui.graphics.Color(0xFFF3F4F6),
                             shape = RoundedCornerShape(12.dp),
@@ -601,7 +597,7 @@ class MainActivity : AppCompatActivity() {
                                         shadowElevation = if (isSel) 2.dp else 0.dp,
                                         modifier = Modifier.weight(1f).clickable {
                                             shareApp = code
-                                            sharedPreferences.edit().putString("share_app", code).apply()
+                                            sharedPreferences.edit { putString("share_app", code) }
                                             viewModel.refreshPreferences()
                                         }
                                     ) {
@@ -613,37 +609,34 @@ class MainActivity : AppCompatActivity() {
 
                         Spacer(modifier = Modifier.height(24.dp))
 
-                        // Settings Container
                         Surface(
                             shape = RoundedCornerShape(16.dp),
                             border = BorderStroke(1.dp, androidx.compose.ui.graphics.Color(0xFFE5E7EB)),
                             color = androidx.compose.ui.graphics.Color.White
                         ) {
                             Column {
-                                // Caption Toggle
                                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text("Auto-Caption", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = androidx.compose.ui.graphics.Color(0xFF111827))
                                         Text("Include details text in message", fontSize = 13.sp, color = androidx.compose.ui.graphics.Color(0xFF6B7280))
                                     }
                                     Switch(checked = captionOn, onCheckedChange = {
-                                        captionOn = it;
-                                        sharedPreferences.edit().putBoolean("share_caption", it).apply()
+                                        captionOn = it
+                                        sharedPreferences.edit { putBoolean("share_caption", it) }
                                         viewModel.refreshPreferences()
                                     }, colors = SwitchDefaults.colors(checkedTrackColor = MaterialTheme.colorScheme.primary))
                                 }
 
                                 HorizontalDivider(color = androidx.compose.ui.graphics.Color(0xFFF3F4F6))
 
-                                // Direct Number Toggle
                                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text("Direct Send", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = androidx.compose.ui.graphics.Color(0xFF111827))
                                         Text("Skip contact selection screen", fontSize = 13.sp, color = androidx.compose.ui.graphics.Color(0xFF6B7280))
                                     }
                                     Switch(checked = numberOn, onCheckedChange = {
-                                        numberOn = it;
-                                        sharedPreferences.edit().putBoolean("share_number_on", it).apply()
+                                        numberOn = it
+                                        sharedPreferences.edit { putBoolean("share_number_on", it) }
                                         viewModel.refreshPreferences()
                                     }, colors = SwitchDefaults.colors(checkedTrackColor = MaterialTheme.colorScheme.primary))
                                 }
@@ -660,8 +653,8 @@ class MainActivity : AppCompatActivity() {
                                             shape = RoundedCornerShape(12.dp),
                                             border = BorderStroke(1.dp, if (defaultNumber == num) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color(0xFFE5E7EB)),
                                             modifier = Modifier.clickable {
-                                                defaultNumber = num;
-                                                sharedPreferences.edit().putString("default_share_number", num).apply()
+                                                defaultNumber = num
+                                                sharedPreferences.edit { putString("default_share_number", num) }
                                                 viewModel.refreshPreferences()
                                             }
                                         ) {
@@ -674,7 +667,6 @@ class MainActivity : AppCompatActivity() {
 
                         Spacer(modifier = Modifier.height(32.dp))
 
-                        // Primary Action
                         Button(
                             onClick = {
                                 if (viewModel.uiState.value.customerName.isNotEmpty() && viewModel.uiState.value.items.isNotEmpty()) {
@@ -682,11 +674,10 @@ class MainActivity : AppCompatActivity() {
                                     binding.tvPrintDate.text = binding.tvDate.text
 
                                     binding.loading.loading.visibility = View.VISIBLE
-                                    binding.relUser.visibility = View.VISIBLE
                                     binding.btnQuickSetup.visibility = View.GONE
 
                                     lifecycleScope.launch {
-                                        val bitmap = createBitmapFromView(binding.receiptRootContainer)
+                                        val bitmap = generateOffScreenInvoiceBitmap(viewModel.uiState.value, binding.tvDate.text.toString())
                                         val savedUri = saveBitmapToCache(bitmap)
 
                                         var phone: String? = null
@@ -701,7 +692,6 @@ class MainActivity : AppCompatActivity() {
                                         viewModel.saveInvoice()
 
                                         withContext(Dispatchers.Main) {
-                                            binding.relUser.visibility = View.GONE
                                             binding.loading.loading.visibility = View.GONE
                                             binding.btnQuickSetup.visibility = View.VISIBLE
                                             dialog.dismiss()
@@ -732,7 +722,7 @@ class MainActivity : AppCompatActivity() {
         if (System.currentTimeMillis() - lastSync > 48 * 60 * 60 * 1000L) {
             lifecycleScope.launch(Dispatchers.IO) {
                 if (syncManager.fetchNewCustomers().isSuccess && syncManager.pushUnsyncedCustomers().isSuccess) {
-                    sharedPreferences.edit().putLong("last_sync_timestamp", System.currentTimeMillis()).apply()
+                    sharedPreferences.edit { putLong("last_sync_timestamp", System.currentTimeMillis()) }
                 }
             }
         }
@@ -765,7 +755,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun shareImage(file: File, phone: String? = null) {
-        val uri = androidx.core.content.FileProvider.getUriForFile(this, "${packageName}.fileprovider", file)
+        val uri = FileProvider.getUriForFile(this, "${packageName}.fileprovider", file)
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "image/png"
             putExtra(Intent.EXTRA_STREAM, uri)
@@ -801,7 +791,7 @@ class MainActivity : AppCompatActivity() {
             } else {
                 startActivity(Intent.createChooser(intent, "Share Invoice"))
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Toast.makeText(this, "App not installed or error sharing", Toast.LENGTH_SHORT).show()
         }
     }
@@ -813,16 +803,54 @@ class MainActivity : AppCompatActivity() {
         file
     }
 
-    private fun createBitmapFromView(view: View): Bitmap {
-        val widthSpec = View.MeasureSpec.makeMeasureSpec(view.width, View.MeasureSpec.EXACTLY)
-        val heightSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
-        view.measure(widthSpec, heightSpec)
-        view.layout(0, 0, view.measuredWidth, view.measuredHeight)
-        val bitmap = Bitmap.createBitmap(view.measuredWidth, view.measuredHeight, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-        canvas.drawColor(android.graphics.Color.WHITE)
-        view.draw(canvas)
-        return bitmap
+    private suspend fun generateOffScreenInvoiceBitmap(state: com.fastbill.ahamed.model.InvoiceUiState, dateText: String): Bitmap = kotlin.coroutines.suspendCoroutine { continuation ->
+        val composeView = ComposeView(this@MainActivity)
+        
+        composeView.setViewTreeLifecycleOwner(this@MainActivity)
+        composeView.setViewTreeViewModelStoreOwner(this@MainActivity)
+        composeView.setViewTreeSavedStateRegistryOwner(this@MainActivity)
+
+        composeView.setContent {
+            MaterialTheme {
+                InvoicePrintTemplate(
+                    customerName = state.customerName,
+                    date = dateText,
+                    items = state.items,
+                    discounts = state.discounts,
+                    totalQuantity = state.totalQuantity,
+                    subTotal = state.subTotal,
+                    grandTotal = state.grandTotal,
+                    themeColorHex = state.themeColor
+                )
+            }
+        }
+
+        val rootView = findViewById<ViewGroup>(android.R.id.content)
+        val targetWidth = if (binding.receiptRootContainer.width > 0) binding.receiptRootContainer.width else 1080
+        
+        composeView.layoutParams = ViewGroup.LayoutParams(targetWidth, ViewGroup.LayoutParams.WRAP_CONTENT)
+        composeView.x = -10000f 
+        rootView.addView(composeView)
+
+        composeView.post {
+            val widthSpec = View.MeasureSpec.makeMeasureSpec(targetWidth, View.MeasureSpec.EXACTLY)
+            val heightSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+            composeView.measure(widthSpec, heightSpec)
+            composeView.layout(0, 0, composeView.measuredWidth, composeView.measuredHeight)
+
+            if (composeView.measuredWidth > 0 && composeView.measuredHeight > 0) {
+                val bitmap = Bitmap.createBitmap(composeView.measuredWidth, composeView.measuredHeight, Bitmap.Config.ARGB_8888)
+                val canvas = Canvas(bitmap)
+                canvas.drawColor(Color.WHITE)
+                composeView.draw(canvas)
+                
+                rootView.removeView(composeView)
+                continuation.resume(bitmap)
+            } else {
+                rootView.removeView(composeView)
+                continuation.resume(Bitmap.createBitmap(targetWidth, 500, Bitmap.Config.ARGB_8888)) 
+            }
+        }
     }
 
     private fun recreateActivityWithAnimation() {
@@ -857,7 +885,7 @@ class MainActivity : AppCompatActivity() {
                 true
             } else false
         }
-        binding.itemNameInput.setOnEditorActionListener { _, actionId, _ ->
+        binding.itemNameInput.setOnEditorActionListener { _, _, _ ->
             val itemName = binding.itemNameInput.text?.toString()?.trim() ?: ""
             if (itemName.isNotEmpty()) {
                 lifecycleScope.launch {
@@ -894,7 +922,7 @@ class MainActivity : AppCompatActivity() {
         val dialogBinding = EditDiscountDialogBinding.inflate(layoutInflater)
         val current = viewModel.uiState.value.discounts[position]
 
-        dialogBinding.tvActiveLabel.text = "Apply to Current Bill"
+        dialogBinding.tvActiveLabel.text = getString(R.string.apply_to_current_bill)
         dialogBinding.switchIsActive.isChecked = true
 
         dialogBinding.etTitle.setText(current.title)
@@ -925,12 +953,12 @@ class MainActivity : AppCompatActivity() {
     override fun dispatchTouchEvent(event: android.view.MotionEvent): Boolean {
         if (event.action == android.view.MotionEvent.ACTION_DOWN) {
             val v = currentFocus
-            if (v is android.widget.EditText) {
-                val outRect = android.graphics.Rect()
+            if (v is EditText) {
+                val outRect = Rect()
                 v.getGlobalVisibleRect(outRect)
                 if (!outRect.contains(event.rawX.toInt(), event.rawY.toInt())) {
                     v.clearFocus()
-                    val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+                    val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
                     imm.hideSoftInputFromWindow(v.windowToken, 0)
                 }
             }

@@ -107,7 +107,7 @@ class SharedInboxActivity : ComponentActivity() {
                 fun fetchSharedBills() {
                     isRefreshing = true
                     db.collection("temporary_bills")
-                        .orderBy("timestamp")
+                        .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
                         .get()
                         .addOnSuccessListener { result ->
                             val newItems = mutableListOf<SharedInvoiceItem>()

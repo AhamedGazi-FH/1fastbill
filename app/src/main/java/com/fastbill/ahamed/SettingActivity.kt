@@ -71,6 +71,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -221,7 +222,7 @@ class SettingActivity : ComponentActivity() {
                         SettingsGroupCard {
                             val defaultColors = "#6750A4,#FFC107,#3F51B5,#4CAF50"
                             var rawColors by remember { mutableStateOf(sharedPreferences.getString("custom_color_list", defaultColors) ?: defaultColors) }
-                            val colorList = rawColors.split(",").take(4).toMutableList()
+                            val colorList = rawColors.split(",").take(4)
                             var selectedIndex by remember { mutableStateOf(colorList.indexOf(state.selectedColor).takeIf { it >= 0 } ?: 0) }
                             var hexInput by remember(state.selectedColor) { mutableStateOf(state.selectedColor) }
 
@@ -253,8 +254,9 @@ class SettingActivity : ComponentActivity() {
                                         if (hexInput.length == 7 && hexInput.startsWith("#")) {
                                             try {
                                                 android.graphics.Color.parseColor(hexInput)
-                                                colorList[selectedIndex] = hexInput
-                                                val newColorString = colorList.joinToString(",")
+                                                val mutableColorList = colorList.toMutableList()
+                                                mutableColorList[selectedIndex] = hexInput
+                                                val newColorString = mutableColorList.joinToString(",")
                                                 sharedPreferences.edit().putString("custom_color_list", newColorString).apply()
                                                 rawColors = newColorString; prefsRepo.setSelectedColor(hexInput)
                                                 viewModel.refreshSettings(); focusManager.clearFocus()
@@ -399,8 +401,8 @@ class SettingActivity : ComponentActivity() {
 
                                 OutlinedTextField(value = newTitle, onValueChange = { newTitle = it }, placeholder = { Text("Name (e.g. GST, Wholesale)") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), singleLine = true)
                                 Row(modifier = Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    OutlinedTextField(value = newPct, onValueChange = { newPct = it }, placeholder = { Text("%") }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
-                                    OutlinedTextField(value = newPrice, onValueChange = { newPrice = it }, placeholder = { Text("Fixed ₹") }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
+                                    OutlinedTextField(value = newPct, onValueChange = { newPct = it }, placeholder = { Text("%") }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword), singleLine = true)
+                                    OutlinedTextField(value = newPrice, onValueChange = { editPrice -> newPrice = editPrice }, placeholder = { Text("Fixed ₹") }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword), singleLine = true)
                                 }
                                 Row(modifier = Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                                     FilterChip(selected = !isPlus, onClick = { isPlus = false }, label = { Text("Discount (-)", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) }, modifier = Modifier.weight(1f))
@@ -507,7 +509,17 @@ class SettingActivity : ComponentActivity() {
                         coroutineScope.launch {
                             val snapshot = backupManager.downloadSnapshot(selectedProfile)
                             if (snapshot != null) {
+                                // 1. Save the current profile name
+                                val currentProfileName = sharedPreferences.getString("default_backup_name", "")
+                                
+                                // 2. Perform the restore
                                 backupManager.applySelectiveRestore(snapshot, restoreBills, restoreSettings)
+                                
+                                // 3. Immediately put the profile name back if settings were restored
+                                if (restoreSettings) {
+                                    sharedPreferences.edit().putString("default_backup_name", currentProfileName).commit()
+                                }
+
                                 Toast.makeText(context, "Restore Complete! Restarting...", Toast.LENGTH_LONG).show()
                                 val restartIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
                                 restartIntent?.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -557,8 +569,8 @@ class SettingActivity : ComponentActivity() {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         OutlinedTextField(value = editTitle, onValueChange = { editTitle = it }, label = { Text("Title") }, singleLine = true, shape = RoundedCornerShape(12.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            OutlinedTextField(value = editPct, onValueChange = { editPct = it }, label = { Text("%") }, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), shape = RoundedCornerShape(12.dp))
-                            OutlinedTextField(value = editPrice, onValueChange = { editPrice = it }, label = { Text("Fixed ₹") }, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), shape = RoundedCornerShape(12.dp))
+                            OutlinedTextField(value = editPct, onValueChange = { editPct = it }, label = { Text("%") }, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword), shape = RoundedCornerShape(12.dp))
+                            OutlinedTextField(value = editPrice, onValueChange = { editPrice = it }, label = { Text("Fixed ₹") }, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword), shape = RoundedCornerShape(12.dp))
                         }
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             FilterChip(selected = !editIsPlus, onClick = { editIsPlus = false }, label = { Text("Discount (-)") }, modifier = Modifier.weight(1f))
@@ -603,7 +615,7 @@ class SettingActivity : ComponentActivity() {
         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(label, fontSize = 15.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
             BasicTextField(
-                value = value, onValueChange = onValueChange, keyboardOptions = KeyboardOptions(keyboardType = keyboardType), textStyle = TextStyle(fontSize = 15.sp, color = Color.Black, textAlign = TextAlign.End), singleLine = true, cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                value = value, onValueChange = onValueChange, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword), textStyle = TextStyle(fontSize = 15.sp, color = Color.Black, textAlign = TextAlign.End), singleLine = true, cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                 decorationBox = { innerTextField ->
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.background(Color(0xFFF2F4F7), RoundedCornerShape(8.dp)).padding(horizontal = 12.dp, vertical = 8.dp).widthIn(min = 60.dp, max = 180.dp)) {
                         Box(Modifier.weight(1f)) { innerTextField() }
