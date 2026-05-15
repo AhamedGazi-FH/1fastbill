@@ -275,7 +275,9 @@ class SharedInboxActivity : ComponentActivity() {
                     SwipeToDismissBoxValue.EndToStart -> { onReject(); true }
                     else -> false
                 }
-            }
+            },
+            // 🚀 EXPERT FIX: Require 50% deliberate swipe distance to ignore diagonal scrolling
+            positionalThreshold = { totalDistance -> totalDistance * 0.5f }
         )
 
         SwipeToDismissBox(

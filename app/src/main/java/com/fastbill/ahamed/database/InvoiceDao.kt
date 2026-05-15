@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface InvoiceDao {
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(invoice: Invoice): Long // Returns the auto-generated invoiceId
 
     @Query("SELECT * FROM invoice_table WHERE invoiceId = :invoiceId")

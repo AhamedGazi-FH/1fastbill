@@ -9,11 +9,13 @@ import com.fastbill.ahamed.database.Item
 import com.fastbill.ahamed.database.PreferencesRepository
 import com.fastbill.ahamed.model.InvoiceUiState
 import com.fastbill.ahamed.model.TemporaryItem
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Collections
 import java.util.Date
@@ -27,28 +29,92 @@ class InvoiceViewModel(
     private val _uiState = MutableStateFlow(InvoiceUiState())
     val uiState: StateFlow<InvoiceUiState> = _uiState.asStateFlow()
 
-    fun refreshPreferences() {
-        val color = preferencesRepository.getSelectedColor()
-        val isNumberOn = preferencesRepository.isShareNumberOn()
-        val defaultNumber = preferencesRepository.getDefaultShareNumber() ?: ""
-        val sn1 = preferencesRepository.getShareNumber(1)
-        val sn2 = preferencesRepository.getShareNumber(2)
-        val sn3 = preferencesRepository.getShareNumber(3)
-        // Added Caption Preferences
-        val isCapOn = preferencesRepository.isShareCaptionOn()
-        val capTemp = preferencesRepository.getShareCaptionTemplate()
+    // 🚀 FIX #1: Loading state controlled reactively
+    fun setLoading(isLoading: Boolean) {
+        _uiState.update { it.copy(isLoading = isLoading) }
+    }
 
-        _uiState.update { state ->
-            state.copy(
-                themeColor = color,
-                isNumberOn = isNumberOn,
-                defaultShareNumber = defaultNumber,
-                shareNumber1 = sn1,
-                shareNumber2 = sn2,
-                shareNumber3 = sn3,
-                isCaptionOn = isCapOn,
-                captionTemplate = capTemp
-            )
+    // 🚀 FIX #1: native loading management for async generation/saving
+    fun performWithLoading(action: suspend () -> Unit) {
+        viewModelScope.launch {
+            setLoading(true)
+            try {
+                action()
+            } finally {
+                setLoading(false)
+            }
+        }
+    }
+
+    // 🚀 FIX #2: All SharedPreferences writes offloaded to Dispatchers.IO
+    fun saveSelectedColorPreference(colorCode: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            preferencesRepository.setSelectedColor(colorCode)
+            refreshPreferences()
+        }
+    }
+
+    fun saveShareAppPreference(code: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            preferencesRepository.setShareAppPreference(code)
+            refreshPreferences()
+        }
+    }
+
+    fun saveCaptionPreference(isOn: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            preferencesRepository.setShareCaptionOn(isOn)
+            refreshPreferences()
+        }
+    }
+
+    fun saveNumberOnPreference(isOn: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            preferencesRepository.setShareNumberOn(isOn)
+            refreshPreferences()
+        }
+    }
+
+    fun saveDefaultShareNumberPreference(number: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            preferencesRepository.setDefaultShareNumber(number)
+            refreshPreferences()
+        }
+    }
+
+    fun refreshPreferences() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val color = preferencesRepository.getSelectedColor()
+            val colors = preferencesRepository.getColors()
+            val isNumberOn = preferencesRepository.isShareNumberOn()
+            val defaultNumber = preferencesRepository.getDefaultShareNumber() ?: ""
+            val sn1 = preferencesRepository.getShareNumber(1)
+            val sn2 = preferencesRepository.getShareNumber(2)
+            val sn3 = preferencesRepository.getShareNumber(3)
+            val isCapOn = preferencesRepository.isShareCaptionOn()
+            val capTemp = preferencesRepository.getShareCaptionTemplate()
+            val shareApp = preferencesRepository.getShareAppPreference()
+            val defaultQty = preferencesRepository.getDefaultQuantity()
+            val design = preferencesRepository.getBillDesign()
+
+            withContext(Dispatchers.Main) {
+                _uiState.update { state ->
+                    state.copy(
+                        themeColor = color,
+                        availableColors = colors,
+                        isNumberOn = isNumberOn,
+                        defaultShareNumber = defaultNumber,
+                        shareNumber1 = sn1,
+                        shareNumber2 = sn2,
+                        shareNumber3 = sn3,
+                        isCaptionOn = isCapOn,
+                        captionTemplate = capTemp,
+                        shareApp = shareApp,
+                        defaultQuantity = defaultQty,
+                        selectedDesign = design
+                    )
+                }
+            }
         }
     }
 
@@ -197,10 +263,25 @@ class InvoiceViewModel(
     fun saveInvoice() {
         viewModelScope.launch {
             val currentState = _uiState.value
-            val invoice = Invoice(invoiceId = currentState.invoiceId, name = currentState.customerName, timestamp = System.currentTimeMillis(), total = currentState.grandTotal)
-            val items = currentState.items.map { Item(name = it.name, quantity = it.quantity, rate = it.rate, total = it.total, invoiceId = currentState.invoiceId) }
-            val newInvoiceId = invoiceRepository.saveFullInvoice(invoice, items, currentState.discounts)
-            _uiState.update { it.copy(invoiceId = newInvoiceId, isSaved = true) }
+            val invoice = Invoice(
+                invoiceId = currentState.invoiceId,
+                name = currentState.customerName,
+                timestamp = System.currentTimeMillis(),
+                total = currentState.grandTotal
+            )
+            val items = currentState.items.map {
+                Item(name = it.name, quantity = it.quantity, rate = it.rate, total = it.total, invoiceId = currentState.invoiceId)
+            }
+
+            if (currentState.invoiceId == 0) {
+                // INSERT — let Room generate the ID
+                val newId = invoiceRepository.insertFullInvoice(invoice.copy(invoiceId = 0), items, currentState.discounts)
+                _uiState.update { it.copy(invoiceId = newId.toInt(), isSaved = true) }
+            } else {
+                // UPDATE — use existing ID
+                invoiceRepository.updateFullInvoice(invoice, items, currentState.discounts)
+                _uiState.update { it.copy(isSaved = true) }
+            }
         }
     }
     

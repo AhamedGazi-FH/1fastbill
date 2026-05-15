@@ -79,7 +79,7 @@ class ActivationActivity : ComponentActivity() {
                         // Save to database/prefs on success
                         prefs.edit()
                             .putBoolean("isActivated", true)
-                            .putString("default_backup_name", name)
+                            .putString("default_backup_name", name.trim())
                             .apply()
 
                         startActivity(Intent(this, MainActivity::class.java))
@@ -199,8 +199,8 @@ fun ActivationScreen(onActivateSuccess: (String) -> Unit) {
 
             Button(
                 onClick = {
-                    if (name.isNotBlank() && code == Utils.ACTIVATION_CODE.toString()) {
-                        onActivateSuccess(name)
+                    if (name.trim().isNotEmpty() && Utils.isValidActivationCode(code)) {
+                        onActivateSuccess(name.trim())
                     } else {
                         showError = true
                     }

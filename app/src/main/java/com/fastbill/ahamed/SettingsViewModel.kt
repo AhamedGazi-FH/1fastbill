@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 data class SettingsUiState(
     val shareApp: String = "other",
@@ -42,7 +43,7 @@ class SettingsViewModel(
     }
 
     fun refreshSettings() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val updatedState = _uiState.value.copy(
                 selectedColor = prefsRepo.getSelectedColor(),
                 defaultQuantity = prefsRepo.getDefaultQuantity(),
@@ -55,7 +56,9 @@ class SettingsViewModel(
                 number3 = prefsRepo.getShareNumber(3),
                 backupDays = prefsRepo.getAutoBackupDays()
             )
-            _uiState.value = updatedState
+            withContext(Dispatchers.Main) {
+                _uiState.value = updatedState
+            }
             prefsRepo.setSettingsJustUpdated(true)
         }
     }

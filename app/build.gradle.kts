@@ -14,8 +14,8 @@ android {
         applicationId = "com.fastbill.ahamed"
         minSdk = 24
         targetSdk = 35
-        versionCode = 6
-        versionName = "1.0.5"
+        versionCode = 7
+        versionName = "1.0.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -87,4 +87,8 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.activity.compose)
+
+    // Play App Update
+    implementation(libs.play.app.update)
+    implementation(libs.play.app.update.ktx)
 }

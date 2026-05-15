@@ -14,6 +14,7 @@ data class InvoiceUiState(
     val invoiceDate: String = "",
     val isSaved: Boolean = false,
     val themeColor: String = "#6750A4",
+    val availableColors: List<String> = emptyList(), // 🚀 EXPERT FIX: Loaded from Prefs IO-safe
     val isNumberOn: Boolean = false,
     val defaultShareNumber: String = "",
     val shareNumber1: String = "",
@@ -21,5 +22,7 @@ data class InvoiceUiState(
     val shareNumber3: String = "",
     val shareApp: String = "other",
     val isCaptionOn: Boolean = true,
-    val captionTemplate: String = ""
+    val captionTemplate: String = "",
+    val defaultQuantity: Int = 4,
+    val selectedDesign: String = "Modern"
 )
