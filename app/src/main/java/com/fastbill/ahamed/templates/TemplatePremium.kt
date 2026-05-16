@@ -79,7 +79,10 @@ fun TemplatePremium(
                 letterSpacing = 2.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(vertical = 16.dp),
-                fontFamily = latoFamily
+                fontFamily = latoFamily,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Visible
             )
         }
 
@@ -90,7 +93,7 @@ fun TemplatePremium(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
-                Text("BILLED TO", fontSize = 11.sp, color = textMuted, fontWeight = FontWeight.Bold, letterSpacing = 1.sp, fontFamily = latoFamily)
+                Text("BILLED TO", fontSize = 11.sp, color = textMuted, fontWeight = FontWeight.Bold, letterSpacing = 1.sp, fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = customerName.ifEmpty { "Cash Customer" },
@@ -98,36 +101,37 @@ fun TemplatePremium(
                     fontWeight = FontWeight.Black,
                     color = textBlack,
                     maxLines = 1,
+                    softWrap = false,
                     overflow = TextOverflow.Ellipsis,
                     fontFamily = latoFamily
                 )
             }
             Surface(color = bgPill, shape = RoundedCornerShape(8.dp)) {
-                Text(date, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textBlack, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp), fontFamily = latoFamily)
+                Text(date, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textBlack, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp), fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
             }
         }
 
         // --- 3. TABLE HEADERS ---
         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("NO.", Modifier.weight(0.8f), fontWeight = FontWeight.Bold, color = textMuted, fontSize = 13.sp, letterSpacing = 0.5.sp, fontFamily = latoFamily)
-            Text("ITEMS", Modifier.weight(2.5f), fontWeight = FontWeight.Bold, color = textMuted, fontSize = 13.sp, letterSpacing = 0.5.sp, fontFamily = latoFamily)
-            Text("QTY", Modifier.weight(1.2f), fontWeight = FontWeight.Bold, color = textMuted, fontSize = 13.sp, textAlign = TextAlign.Center, letterSpacing = 0.5.sp, fontFamily = latoFamily)
-            Text("RATE", Modifier.weight(1.8f), fontWeight = FontWeight.Bold, color = textMuted, fontSize = 13.sp, textAlign = TextAlign.End, letterSpacing = 0.5.sp, fontFamily = latoFamily)
-            Text("TOTAL", Modifier.weight(2.2f), fontWeight = FontWeight.Bold, color = textMuted, fontSize = 13.sp, textAlign = TextAlign.End, letterSpacing = 0.5.sp, fontFamily = latoFamily)
+            Text("NO.", Modifier.width(35.dp), fontWeight = FontWeight.Bold, color = textMuted, fontSize = 13.sp, letterSpacing = 0.5.sp, fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
+            Text("ITEMS", Modifier.weight(1f).padding(end = 4.dp), fontWeight = FontWeight.Bold, color = textMuted, fontSize = 13.sp, letterSpacing = 0.5.sp, fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+            Text("QTY", Modifier.width(50.dp).padding(end = 8.dp), fontWeight = FontWeight.Bold, color = textMuted, fontSize = 13.sp, textAlign = TextAlign.End, letterSpacing = 0.5.sp, fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
+            Text("RATE", Modifier.width(70.dp).padding(end = 8.dp), fontWeight = FontWeight.Bold, color = textMuted, fontSize = 13.sp, textAlign = TextAlign.End, letterSpacing = 0.5.sp, fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
+            Text("TOTAL", Modifier.width(88.dp), fontWeight = FontWeight.Bold, color = textMuted, fontSize = 13.sp, textAlign = TextAlign.End, letterSpacing = 0.5.sp, fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
         }
 
         // --- 4. DATA ROWS ---
         items.forEachIndexed { index, item ->
             val bgColor = if (index % 2 == 1) bgStripe else Color.White
             Row(modifier = Modifier.fillMaxWidth().background(bgColor).padding(horizontal = 20.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("${index + 1}", Modifier.weight(0.8f), color = textMuted, fontWeight = FontWeight.Bold, fontSize = 16.sp, fontFamily = latoFamily)
-                Text(item.name, Modifier.weight(2.5f), color = textBlack, fontWeight = FontWeight.Black, fontSize = 18.sp, fontFamily = latoFamily)
+                Text("${index + 1}", Modifier.width(35.dp), color = textMuted, fontWeight = FontWeight.Bold, fontSize = 16.sp, fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
+                Text(item.name, Modifier.weight(1f).padding(end = 4.dp), color = textBlack, fontWeight = FontWeight.Black, fontSize = 18.sp, fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
 
                 val qtyColor = if (item.quantity == defaultQty) textBlack else textRed
-                Text("${item.quantity}", Modifier.weight(1.2f), color = qtyColor, fontWeight = FontWeight.Black, fontSize = 18.sp, textAlign = TextAlign.Center, fontFamily = latoFamily)
+                Text("${item.quantity}", Modifier.width(50.dp).padding(end = 8.dp), color = qtyColor, fontWeight = FontWeight.Black, fontSize = 18.sp, textAlign = TextAlign.End, fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
 
-                Text(fmt(item.rate), Modifier.weight(1.8f), color = textBlack, fontWeight = FontWeight.Bold, fontSize = 17.sp, textAlign = TextAlign.End, fontFamily = latoFamily)
-                Text(fmt(item.total), Modifier.weight(2.2f), color = textBlack, fontWeight = FontWeight.Black, fontSize = 18.sp, textAlign = TextAlign.End, fontFamily = latoFamily)
+                Text(fmt(item.rate), Modifier.width(70.dp).padding(end = 8.dp), color = textBlack, fontWeight = FontWeight.Bold, fontSize = 17.sp, textAlign = TextAlign.End, fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
+                Text(fmt(item.total), Modifier.width(88.dp), color = textBlack, fontWeight = FontWeight.Black, fontSize = 18.sp, textAlign = TextAlign.End, fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
             }
         }
 
@@ -146,50 +150,51 @@ fun TemplatePremium(
 
         // --- 6. SUBTOTAL & DISCOUNTS ---
         Row(modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Spacer(Modifier.weight(3.3f))
+            Text("SUBTOTAL", Modifier.width(35.dp), fontWeight = FontWeight.Bold, color = textMuted, fontSize = 11.sp, fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
+            Spacer(Modifier.weight(1f))
 
-            // EXPERT FIX: Big Pill, Big Font, Zero Clipping
-            Box(modifier = Modifier.weight(1.2f), contentAlignment = Alignment.Center) {
-                Text(
-                    text = "$totalQuantity Pcs",
-                    fontWeight = FontWeight.Black,
-                    color = textBlack,
-                    fontSize = 16.sp, // Font wapas bada kar diya
-                    maxLines = 1,
-                    softWrap = false, // Do lines me nahi tootega
-                    modifier = Modifier
-                        .wrapContentWidth(unbounded = true) // Column ki width se aazad (koi cutting nahi)
-                        .background(bgPill, RoundedCornerShape(12.dp)) // Premium roundness
-                        .padding(horizontal = 16.dp, vertical = 8.dp), // Pill ko bada kar diya (Extra padding)
-                    fontFamily = latoFamily,
-                    textAlign = TextAlign.Center
-                )
-            }
+            Text(
+                text = "$totalQuantity Pcs",
+                fontWeight = FontWeight.Black,
+                color = textBlack,
+                fontSize = 16.sp, 
+                maxLines = 1,
+                softWrap = false, 
+                modifier = Modifier.width(50.dp).padding(end = 8.dp),
+                fontFamily = latoFamily,
+                textAlign = TextAlign.End,
+                overflow = TextOverflow.Visible
+            )
 
-            Text("₹ ${fmt(subTotal)}", Modifier.weight(4.0f), fontWeight = FontWeight.Black, color = textBlack, fontSize = 18.sp, textAlign = TextAlign.End, fontFamily = latoFamily)
+            Spacer(Modifier.width(70.dp))
+
+            Text("₹ ${fmt(subTotal)}", Modifier.width(88.dp), fontWeight = FontWeight.Black, color = textBlack, fontSize = 18.sp, textAlign = TextAlign.End, fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
         }
 
         discounts.forEachIndexed { index, discount ->
             val isNegative = !discount.isPlus
             Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Spacer(Modifier.weight(0.8f))
+                Spacer(Modifier.width(35.dp))
 
                 Text(
                     text = discount.title,
-                    modifier = Modifier.weight(2.5f).padding(end = 4.dp),
+                    modifier = Modifier.weight(1f).padding(end = 4.dp),
                     color = textBlack,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
-                    fontFamily = latoFamily
+                    fontFamily = latoFamily,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Visible
                 )
 
                 val pctStr = if (discount.percentage > 0) "${discount.percentage}%" else ""
-                Text(pctStr, Modifier.weight(1.2f), color = textBlack, fontWeight = FontWeight.Bold, fontSize = 16.sp, textAlign = TextAlign.Center, fontFamily = latoFamily)
+                Text(pctStr, Modifier.width(50.dp + 70.dp), color = textBlack, fontWeight = FontWeight.Bold, fontSize = 16.sp, textAlign = TextAlign.End, fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
 
                 val amt = try { discount.amount.absoluteValue } catch(_: Exception) { 0.0 }
                 val prefix = if (isNegative) "- ₹ " else "+ ₹ "
                 val tColor = if (isNegative) textRed else textBlack
-                Text("$prefix${fmt(amt)}", Modifier.weight(4.0f), color = tColor, fontWeight = FontWeight.Black, fontSize = 16.sp, textAlign = TextAlign.End, fontFamily = latoFamily)
+                Text("$prefix${fmt(amt)}", Modifier.width(88.dp), color = tColor, fontWeight = FontWeight.Black, fontSize = 16.sp, textAlign = TextAlign.End, fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
             }
 
             if (index < discounts.size - 1) {
@@ -210,9 +215,9 @@ fun TemplatePremium(
                     modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("NET PAYABLE", fontWeight = FontWeight.Bold, color = footerTextColor, fontSize = 15.sp, letterSpacing = 1.sp, fontFamily = latoFamily)
+                    Text("NET PAYABLE", fontWeight = FontWeight.Bold, color = footerTextColor, fontSize = 15.sp, letterSpacing = 1.sp, fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
                     Spacer(Modifier.weight(1f))
-                    Text("₹ ${fmt(grandTotal)}", fontWeight = FontWeight.Black, color = footerTextColor, fontSize = 32.sp, textAlign = TextAlign.End, fontFamily = latoFamily)
+                    Text("₹ ${fmt(grandTotal)}", fontWeight = FontWeight.Black, color = footerTextColor, fontSize = 32.sp, textAlign = TextAlign.End, fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
                 }
             }
         }

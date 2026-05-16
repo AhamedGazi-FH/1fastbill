@@ -72,66 +72,62 @@ fun TemplateModern(
         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text(customerName.ifEmpty { "Cash Customer" }, fontSize = 32.sp, fontWeight = FontWeight.Black, color = textBlack, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(end = 12.dp), fontFamily = latoFamily)
             Surface(color = bgHeader, shape = RoundedCornerShape(8.dp)) {
-                Text(formattedDate, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = textBlack, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp), fontFamily = latoFamily)
+                Text(formattedDate, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = textBlack, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp), fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
             }
         }
 
         HorizontalDivider(thickness = 1.dp, color = itemDivider)
         Row(modifier = Modifier.fillMaxWidth().background(bgHeader).padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("No.", Modifier.weight(1f), fontWeight = FontWeight.Bold, color = textMuted, fontSize = 14.sp, fontFamily = latoFamily)
-            Text("Item", Modifier.weight(3.5f), fontWeight = FontWeight.Bold, color = textMuted, fontSize = 14.sp, fontFamily = latoFamily)
-            Text("Qty", Modifier.weight(1.5f), fontWeight = FontWeight.Bold, color = textMuted, fontSize = 14.sp, textAlign = TextAlign.End, fontFamily = latoFamily)
-            Text("Rate", Modifier.weight(2f), fontWeight = FontWeight.Bold, color = textMuted, fontSize = 14.sp, textAlign = TextAlign.End, fontFamily = latoFamily)
-            Text("Total", Modifier.weight(2.5f), fontWeight = FontWeight.Bold, color = textMuted, fontSize = 14.sp, textAlign = TextAlign.End, fontFamily = latoFamily)
+            Text("No.", Modifier.width(35.dp), fontWeight = FontWeight.Bold, color = textMuted, fontSize = 14.sp, fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
+            Text("Item", Modifier.weight(1f).padding(end = 4.dp), fontWeight = FontWeight.Bold, color = textMuted, fontSize = 14.sp, fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+            Text("Qty", Modifier.width(50.dp).padding(end = 8.dp), fontWeight = FontWeight.Bold, color = textMuted, fontSize = 14.sp, textAlign = TextAlign.End, fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
+            Text("Rate", Modifier.width(70.dp).padding(end = 8.dp), fontWeight = FontWeight.Bold, color = textMuted, fontSize = 14.sp, textAlign = TextAlign.End, fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
+            Text("Total", Modifier.width(88.dp), fontWeight = FontWeight.Bold, color = textMuted, fontSize = 14.sp, textAlign = TextAlign.End, fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
         }
         HorizontalDivider(thickness = 1.dp, color = itemDivider)
 
         items.forEachIndexed { index, item ->
             val bgColor = if (index % 2 == 1) bgStripe else Color.White
             Row(modifier = Modifier.fillMaxWidth().background(bgColor).padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("${index + 1}", Modifier.weight(1f), color = textMuted, fontWeight = FontWeight.Bold, fontSize = 14.sp, fontFamily = latoFamily)
-                Text(item.name, Modifier.weight(3.5f), color = textBlack, fontWeight = FontWeight.Black, fontSize = 18.sp, fontFamily = latoFamily)
+                Text("${index + 1}", Modifier.width(35.dp), color = textMuted, fontWeight = FontWeight.Bold, fontSize = 14.sp, fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
+                Text(item.name, Modifier.weight(1f).padding(end = 4.dp), color = textBlack, fontWeight = FontWeight.Black, fontSize = 18.sp, fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
 
-                // Smart Anomaly Highlight (Deep Red Text, Perfect Alignment)
-                if (item.quantity == defaultQty) {
-                    Text("${item.quantity}", Modifier.weight(1.5f), color = textBlack, fontWeight = FontWeight.Black, fontSize = 18.sp, textAlign = TextAlign.End, fontFamily = latoFamily)
-                } else {
-                    Text("${item.quantity}", Modifier.weight(1.5f), color = Color(0xFFD32F2F), fontWeight = FontWeight.Black, fontSize = 18.sp, textAlign = TextAlign.End, fontFamily = latoFamily)
-                }
+                val qtyColor = if (item.quantity == defaultQty) textBlack else Color(0xFFD32F2F)
+                Text("${item.quantity}", Modifier.width(50.dp).padding(end = 8.dp), color = qtyColor, fontWeight = FontWeight.Black, fontSize = 18.sp, textAlign = TextAlign.End, fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
 
-                Text(formatNumber(item.rate), Modifier.weight(2f), color = textBlack, fontWeight = FontWeight.Bold, fontSize = 17.sp, textAlign = TextAlign.End, fontFamily = latoFamily)
-                Text(formatNumber(item.total), Modifier.weight(2.5f), color = textBlack, fontWeight = FontWeight.Black, fontSize = 18.sp, textAlign = TextAlign.End, fontFamily = latoFamily)
+                Text(formatNumber(item.rate), Modifier.width(70.dp).padding(end = 8.dp), color = textBlack, fontWeight = FontWeight.Bold, fontSize = 17.sp, textAlign = TextAlign.End, fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
+                Text(formatNumber(item.total), Modifier.width(88.dp), color = textBlack, fontWeight = FontWeight.Black, fontSize = 18.sp, textAlign = TextAlign.End, fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
             }
             HorizontalDivider(thickness = 1.dp, color = itemDivider)
         }
 
         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text("SUBTOTAL", Modifier.width(35.dp), fontWeight = FontWeight.Bold, color = textMuted, fontSize = 12.sp, fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
             Spacer(Modifier.weight(1f))
-            Text("SUBTOTAL", Modifier.weight(3.5f), fontWeight = FontWeight.Black, color = textMuted, fontSize = 14.sp, fontFamily = latoFamily)
-            Text("${totalQuantity} Pcs", Modifier.weight(1.5f), fontWeight = FontWeight.Black, color = textBlack, fontSize = 18.sp, textAlign = TextAlign.End, fontFamily = latoFamily)
-            Spacer(Modifier.weight(2f))
-            Text("₹ ${formatNumber(subTotal)}", Modifier.weight(2.5f), fontWeight = FontWeight.Black, color = textBlack, fontSize = 18.sp, textAlign = TextAlign.End, fontFamily = latoFamily)
+            Text("${totalQuantity} Pcs", Modifier.width(50.dp).padding(end = 8.dp), fontWeight = FontWeight.Black, color = textBlack, fontSize = 18.sp, textAlign = TextAlign.End, fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
+            Spacer(Modifier.width(70.dp))
+            Text("₹ ${formatNumber(subTotal)}", Modifier.width(88.dp), fontWeight = FontWeight.Black, color = textBlack, fontSize = 18.sp, textAlign = TextAlign.End, fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
         }
         HorizontalDivider(thickness = 1.dp, color = itemDivider)
 
         discounts.forEach { discount ->
             val isNegative = !discount.isPlus
             Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                Spacer(Modifier.weight(1f))
-                Text(discount.title, Modifier.weight(3.5f), color = textBlack, fontWeight = FontWeight.Bold, fontSize = 15.sp, fontFamily = latoFamily)
+                Spacer(Modifier.width(35.dp))
+                Text(discount.title, Modifier.weight(1f).padding(end = 4.dp), color = textBlack, fontWeight = FontWeight.Bold, fontSize = 15.sp, fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
                 val pctStr = if (discount.percentage > 0) "${discount.percentage}%" else ""
-                Text(pctStr, Modifier.weight(1.5f), color = textBlack, fontWeight = FontWeight.Bold, fontSize = 15.sp, textAlign = TextAlign.End, fontFamily = latoFamily)
-                Spacer(Modifier.weight(2f))
+                Text(pctStr, Modifier.width(50.dp + 70.dp), color = textBlack, fontWeight = FontWeight.Bold, fontSize = 15.sp, textAlign = TextAlign.End, fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
+                
                 val absoluteAmount = discount.amount.absoluteValue
 
                 if (isNegative) {
-                    Box(modifier = Modifier.weight(2.5f), contentAlignment = Alignment.CenterEnd) {
+                    Box(modifier = Modifier.width(88.dp), contentAlignment = Alignment.CenterEnd) {
                         Surface(color = chipGreenBg, shape = RoundedCornerShape(6.dp)) {
-                            Text("- ₹ ${formatNumber(absoluteAmount)}", color = chipGreenText, fontWeight = FontWeight.Black, fontSize = 16.sp, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), fontFamily = latoFamily)
+                            Text("- ₹ ${formatNumber(absoluteAmount)}", color = chipGreenText, fontWeight = FontWeight.Black, fontSize = 16.sp, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
                         }
                     }
                 } else {
-                    Text("₹ ${formatNumber(absoluteAmount)}", Modifier.weight(2.5f), color = textBlack, fontWeight = FontWeight.Black, fontSize = 16.sp, textAlign = TextAlign.End, fontFamily = latoFamily)
+                    Text("₹ ${formatNumber(absoluteAmount)}", Modifier.width(88.dp), color = textBlack, fontWeight = FontWeight.Black, fontSize = 16.sp, textAlign = TextAlign.End, fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
                 }
             }
         }
@@ -140,9 +136,9 @@ fun TemplateModern(
         Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
             Surface(shape = RoundedCornerShape(12.dp), color = themeColor, modifier = Modifier.fillMaxWidth()) {
                 Row(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("TOTAL: ${totalQuantity} PCS", fontWeight = FontWeight.Black, color = footerTextColor, fontSize = 18.sp, fontFamily = latoFamily)
+                    Text("TOTAL: ${totalQuantity} PCS", fontWeight = FontWeight.Black, color = footerTextColor, fontSize = 18.sp, fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
                     Spacer(Modifier.weight(1f))
-                    Text("₹ ${formatNumber(grandTotal)}", fontWeight = FontWeight.Black, color = footerTextColor, fontSize = 34.sp, textAlign = TextAlign.End, fontFamily = latoFamily)
+                    Text("₹ ${formatNumber(grandTotal)}", fontWeight = FontWeight.Black, color = footerTextColor, fontSize = 34.sp, textAlign = TextAlign.End, fontFamily = latoFamily, maxLines = 1, softWrap = false, overflow = TextOverflow.Visible)
                 }
             }
         }

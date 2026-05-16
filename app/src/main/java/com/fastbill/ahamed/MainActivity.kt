@@ -84,6 +84,9 @@ class MainActivity : ComponentActivity() {
 
         sharedPreferences = getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
 
+        // 🚀 EXPERT FIX: Trigger background rate pull instantly on app open
+        syncManager.pullRatesSilentlyOnStartup(this)
+
         val invoiceRepo = InvoiceRepository(database.invoiceDao(), database.itemDao(), database.discountDao(), database.invoiceDiscountDao())
         val prefsRepo = PreferencesRepository(sharedPreferences)
         val factory = InvoiceViewModelFactory(invoiceRepo, prefsRepo)
@@ -158,7 +161,14 @@ class MainActivity : ComponentActivity() {
         val lastSync = sharedPreferences.getLong("last_sync_timestamp", 0L)
         if (System.currentTimeMillis() - lastSync > 48 * 60 * 60 * 1000L) {
             lifecycleScope.launch(Dispatchers.IO) {
-                if (syncManager.fetchNewCustomers().isSuccess && syncManager.pushUnsyncedCustomers().isSuccess) {
+                val customersOk = syncManager.fetchNewCustomers().isSuccess &&
+                                  syncManager.pushUnsyncedCustomers().isSuccess
+                val ratesOk = try {
+                    syncManager.forceSyncRatesNow(this@MainActivity)
+                    true
+                } catch (e: Exception) { false }
+
+                if (customersOk && ratesOk) {
                     sharedPreferences.edit { putLong("last_sync_timestamp", System.currentTimeMillis()) }
                 }
             }

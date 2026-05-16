@@ -5,6 +5,9 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "rate_table")
 data class Rate(
-    @PrimaryKey val item_name: String, // Primary key (unique item name)
-    var rate: Double                   // Rate for the item
+    @PrimaryKey val item_name: String,
+    var rate: Double,
+    var updatedAt: Long = System.currentTimeMillis(),
+    var isSynced: Boolean = false,
+    var isDeleted: Boolean = false
 )

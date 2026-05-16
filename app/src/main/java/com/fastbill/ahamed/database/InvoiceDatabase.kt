@@ -9,7 +9,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [Invoice::class, Item::class, Discount::class, Rate::class, InvoiceDiscount::class, Customer::class, SyncLog::class],
-    version = 7, // INCREMENTED: We bumped this from 6 to 7
+    version = 9,
     exportSchema = false
 )
 abstract class InvoiceDatabase : RoomDatabase() {
@@ -25,8 +25,6 @@ abstract class InvoiceDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: InvoiceDatabase? = null
 
-        // THE LIFESAVER: This teaches Android how to upgrade old databases without deleting data.
-        // We use try-catch blocks so it works perfectly even if the user already cleared their data.
         val MIGRATION_6_7 = object : Migration(6, 7) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 try {
@@ -43,6 +41,27 @@ abstract class InvoiceDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                val currentTime = System.currentTimeMillis()
+                try {
+                    database.execSQL("ALTER TABLE rate_table ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT $currentTime")
+                } catch (e: Exception) { /* Column might exist */ }
+                
+                try {
+                    database.execSQL("ALTER TABLE rate_table ADD COLUMN isSynced INTEGER NOT NULL DEFAULT 0")
+                } catch (e: Exception) { /* Column might exist */ }
+            }
+        }
+
+        val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                try {
+                    database.execSQL("ALTER TABLE rate_table ADD COLUMN isDeleted INTEGER NOT NULL DEFAULT 0")
+                } catch (e: Exception) { /* Column might exist */ }
+            }
+        }
+
         fun getDatabase(context: Context): InvoiceDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -50,8 +69,7 @@ abstract class InvoiceDatabase : RoomDatabase() {
                     InvoiceDatabase::class.java,
                     "invoice_database"
                 )
-                    // DELETED: .fallbackToDestructiveMigration()
-                    .addMigrations(MIGRATION_6_7) // ADDED: Safe Migration
+                    .addMigrations(MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
                     .build()
 
                 INSTANCE = instance

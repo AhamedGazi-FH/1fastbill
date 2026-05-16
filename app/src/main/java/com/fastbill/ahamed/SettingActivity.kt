@@ -1,5 +1,6 @@
 package com.fastbill.ahamed
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
@@ -176,6 +177,7 @@ fun SettingsScreen(
     val coroutineScope = rememberCoroutineScope()
 
     var showCustomerSheet by remember { mutableStateOf(false) }
+    var showRateSheet by remember { mutableStateOf(false) }
     var showBackupNameDialog by remember { mutableStateOf(false) }
     var showRestoreDialog by remember { mutableStateOf(false) }
     var showLogsDialog by remember { mutableStateOf(false) }
@@ -192,6 +194,33 @@ fun SettingsScreen(
                     CSVImporter.importCustomersFromCSV(context, it, database.customerDao())
                     Toast.makeText(context, "Import Complete", Toast.LENGTH_SHORT).show()
                 } catch (e: Exception) { Toast.makeText(context, "Import Failed", Toast.LENGTH_SHORT).show() }
+            }
+        }
+    }
+
+    val rateCsvLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let {
+            coroutineScope.launch {
+                isGlobalLoading = true
+                try {
+                    val result = CSVImporter.importRatesFromCSV(context, it, database.rateDao())
+                    if (result.isSuccess) {
+                        val count = result.getOrNull() ?: 0
+                        Toast.makeText(context, "Imported $count rates. Uploading to cloud...", Toast.LENGTH_SHORT).show()
+                        try {
+                            val syncMsg = syncManager.forceSyncRatesNow(context)
+                            Toast.makeText(context, "✓ $syncMsg", Toast.LENGTH_SHORT).show()
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "Saved locally. Will sync next time.", Toast.LENGTH_SHORT).show()
+                        }
+                    } else {
+                        Toast.makeText(context, "Import Failed: ${result.exceptionOrNull()?.message}", Toast.LENGTH_SHORT).show()
+                    }
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Import Failed", Toast.LENGTH_SHORT).show()
+                } finally {
+                    isGlobalLoading = false
+                }
             }
         }
     }
@@ -371,6 +400,12 @@ fun SettingsScreen(
                     SettingsActionRow(Icons.Default.UploadFile, Color(0xFF009688), "Import Customers (CSV)", onClick = { focusManager.clearFocus(); csvLauncher.launch("text/comma-separated-values") })
                     DividerRow()
 
+                    // 🚀 EXPERT FIX: Added Rate Management UI
+                    SettingsActionRow(Icons.Default.Group, Color(0xFFE91E63), "Manage Item Rates", onClick = { focusManager.clearFocus(); showRateSheet = true })
+                    DividerRow()
+                    SettingsActionRow(Icons.Default.UploadFile, Color(0xFF9C27B0), "Import Rates (CSV)", onClick = { focusManager.clearFocus(); rateCsvLauncher.launch("text/comma-separated-values") })
+                    DividerRow()
+
                     var backupDays by remember(state.backupDays) { mutableStateOf(state.backupDays.toString()) }
                     InlineInputRow("Auto-Backup Interval", backupDays, onValueChange = { 
                         backupDays = it
@@ -400,10 +435,38 @@ fun SettingsScreen(
                         onLongClick = { focusManager.clearFocus(); showLogsDialog = true }
                     )
                     DividerRow()
-                    SettingsActionRow(Icons.Default.Sync, Color(0xFF673AB7), "Force Cloud Sync",
+                    SettingsActionRow(
+                        icon = Icons.Default.Sync, 
+                        tint = Color(0xFF673AB7), 
+                        text = "Force Cloud Sync",
                         onClick = {
-                            focusManager.clearFocus(); isGlobalLoading = true
-                            coroutineScope.launch { syncManager.pushUnsyncedCustomers(); isGlobalLoading = false; Toast.makeText(context, "Sync Done", Toast.LENGTH_SHORT).show() }
+                            focusManager.clearFocus()
+                            coroutineScope.launch {
+                                try {
+                                    isGlobalLoading = true
+                                    
+                                    // Step 1: Customers - push pending deletions and new customers
+                                    val pushResult = syncManager.pushUnsyncedCustomers()
+                                    if (pushResult.isFailure) throw pushResult.exceptionOrNull() ?: Exception("Customer push failed")
+                                    
+                                    // Step 2: Customers - pull new customers from Firebase
+                                    val fetchResult = syncManager.fetchNewCustomers()
+                                    if (fetchResult.isFailure) throw fetchResult.exceptionOrNull() ?: Exception("Customer fetch failed")
+                                    
+                                    // Step 3: Rates - two-way sync
+                                    val rateMsg = syncManager.forceSyncRatesNow(context)
+                                    
+                                    // Update last sync timestamp
+                                    val sharedPreferences = context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+                                    sharedPreferences.edit().putLong("last_sync_timestamp", System.currentTimeMillis()).apply()
+                                    
+                                    Toast.makeText(context, "✓ Synced! $rateMsg", Toast.LENGTH_SHORT).show()
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Sync Error: ${e.localizedMessage ?: "Unknown error"}", Toast.LENGTH_LONG).show()
+                                } finally {
+                                    isGlobalLoading = false
+                                }
+                            }
                         },
                         onLongClick = { focusManager.clearFocus(); showLogsDialog = true }
                     )
@@ -479,6 +542,7 @@ fun SettingsScreen(
 
     // --- DIALOGS & BOTTOM SHEETS ---
     if (showCustomerSheet) ManageCustomersSheet(onDismiss = { showCustomerSheet = false }, database = database)
+    if (showRateSheet) ManageRatesSheet(onDismiss = { showRateSheet = false }, database = database)
 
     if (showBackupNameDialog) {
         var tempName by remember { mutableStateOf(prefsRepo.getDefaultBackupName() ?: "") }
@@ -708,6 +772,80 @@ fun ManageCustomersSheet(onDismiss: () -> Unit, database: InvoiceDatabase) {
                     Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(c.customerName, Modifier.weight(1f), fontWeight = FontWeight.Medium, fontSize = 16.sp)
                         IconButton(onClick = { coroutineScope.launch { database.customerDao().markAsDeleted(c.id) } }) { Icon(Icons.Default.Delete, null, tint = Color.Red) }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ManageRatesSheet(onDismiss: () -> Unit, database: InvoiceDatabase) {
+    val rates by database.rateDao().getAllRates().collectAsState(initial = emptyList())
+    var searchQuery by remember { mutableStateOf("") }
+    val coroutineScope = rememberCoroutineScope()
+    var showClearConfirm by remember { mutableStateOf(false) }
+
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(Modifier.padding(20.dp).fillMaxHeight(0.85f)) {
+            Text("Manage Item Rates", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                label = { Text("Search D.No / Items") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                shape = RoundedCornerShape(12.dp),
+                singleLine = true
+            )
+
+            Button(
+                onClick = { showClearConfirm = true },
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp).height(50.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                shape = RoundedCornerShape(12.dp)
+            ) { Text("CLEAR LOCAL DATABASE", fontWeight = FontWeight.Bold) }
+
+            if (showClearConfirm) {
+                AlertDialog(
+                    onDismissRequest = { showClearConfirm = false },
+                    title = { Text("Clear All Rates?") },
+                    text = { Text("This will permanently delete all local item rate data. This cannot be undone.") },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            coroutineScope.launch {
+                                database.rateDao().clearAllSyncedRatesLocally()
+                                showClearConfirm = false
+                                onDismiss()
+                            }
+                        }) { Text("CLEAR", color = Color.Red, fontWeight = FontWeight.Bold) }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showClearConfirm = false }) { Text("CANCEL") }
+                    }
+                )
+            }
+
+            val filteredList = if (searchQuery.isBlank()) rates else rates.filter { it.item_name.contains(searchQuery, ignoreCase = true) }
+
+            LazyColumn {
+                items(filteredList) { r ->
+                    Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text(r.item_name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Text("₹ ${r.rate}", color = Color.Gray, fontSize = 14.sp)
+                        }
+                        IconButton(onClick = {
+                            coroutineScope.launch {
+                                if (r.isSynced) {
+                                    database.rateDao().markRateAsDeleted(r.item_name)
+                                } else {
+                                    database.rateDao().deleteRatePermanently(r.item_name)
+                                }
+                            }
+                        }) { Icon(Icons.Default.Delete, null, tint = Color.Red) }
                     }
                 }
             }

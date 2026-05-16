@@ -3,7 +3,7 @@ package com.fastbill.ahamed
 import android.content.Context
 
 object Utils {
-    private const val ACTIVATION_CODE_HASH = "0387b37267f50a41738739660893f4129b01083e91143899201a09df28e21966"
+    private const val ACTIVATION_CODE_HASH = "2e10d1b8928c215ef34e0f1a6dae0bcd38d3bf4a4cf7770efcccf9725e017d93"
 
     fun isValidActivationCode(input: String): Boolean {
         return try {
